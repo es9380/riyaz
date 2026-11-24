@@ -127,16 +127,16 @@ body {
      so scrolled page content never bleeds through behind it. */
   .site-header { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
   .header-in { gap: 12px; }
-  .header-in .theme-toggle { margin-left: auto; }
+  .header-in .header-actions { margin-left: auto; }
   .main-nav {
     position: fixed; left: 8px; right: 8px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 95;
-    display: flex; justify-content: space-between; gap: 2px; overflow: hidden; padding: 4px;
+    display: flex; justify-content: space-between; gap: 4px; overflow: hidden; padding: 5px;
     background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow);
   }
   .main-nav a {
-    flex: 1 1 auto; text-align: center;
-    padding: 8px 5px; font-size: .72rem; letter-spacing: -0.01em; white-space: nowrap;
+    flex: 1 1 0; flex-direction: column; justify-content: center; gap: 3px; text-align: center;
+    padding: 7px 6px; font-size: .72rem; letter-spacing: 0; white-space: nowrap;
   }
   body:has(#view.view-stage) .main-nav { display: none; }
   .site-footer { padding-bottom: 84px; }

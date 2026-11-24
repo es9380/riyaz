@@ -152,14 +152,24 @@ button {
 }
 
 .main-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   text-decoration: none;
   color: var(--ink-2);
   font-size: var(--fs-small);
   font-weight: 550;
-  padding: 7px 11px;
+  padding: 7px 12px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
   transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+
+.nav-ico,
+.ui-ico {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .main-nav a:hover {
@@ -173,6 +183,18 @@ button {
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.prefs-wrap {
+  position: relative;
+}
+
+.icon-btn,
 .theme-toggle {
   flex: none;
   width: 36px;
@@ -182,17 +204,112 @@ button {
   place-items: center;
   color: var(--ink-2);
   border: 1px solid var(--line);
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
 }
 
+.icon-btn:hover,
 .theme-toggle:hover {
   color: var(--ink);
   border-color: var(--line-strong);
+  background: var(--surface-2);
 }
 
+.icon-btn svg,
 .theme-toggle svg {
   width: 17px;
   height: 17px;
+}
+
+.prefs-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 160;
+  width: 264px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+}
+
+.prefs-pop[hidden] {
+  display: none;
+}
+
+.pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: var(--fs-small);
+  color: var(--ink);
+}
+
+.pref-row + .pref-row {
+  border-top: 1px solid var(--line);
+}
+
+.pref-chk {
+  cursor: pointer;
+}
+
+.pref-chk input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  padding: 2px 4px;
+  background: var(--bg-raise);
+}
+
+.stepper button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.stepper button:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.stepper strong {
+  min-width: 18px;
+  text-align: center;
+}
+
+.mini-seg {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--bg-raise);
+}
+
+.mini-seg button {
+  padding: 4px 8px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.mini-seg button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 #view {

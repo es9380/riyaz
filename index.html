@@ -45,19 +45,66 @@
       Riyaz
     </a>
     <nav class="main-nav" aria-label="Main">
-      <a href="#/" data-nav="home">Home</a>
-      <a href="#/arena" data-nav="arena">Exam Arena</a>
-      <a href="#/studio" data-nav="studio">Training Studio</a>
-      <a href="#/progress" data-nav="progress">Progress</a>
+      <a href="#/" data-nav="home">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="#/arena" data-nav="arena">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span>Exams</span>
+      </a>
+      <a href="#/studio" data-nav="studio">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
+        <span>Drills</span>
+      </a>
+      <a href="#/progress" data-nav="progress">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Progress</span>
+      </a>
     </nav>
-    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme">
-      <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="display:none">
-        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
-      </svg>
-      <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
-      </svg>
-    </button>
+    <div class="header-actions">
+      <div class="prefs-wrap">
+        <button class="icon-btn" id="prefsToggle" type="button" aria-label="Quick settings" aria-expanded="false" aria-controls="prefsMenu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
+        <div class="prefs-pop" id="prefsMenu" hidden role="dialog" aria-label="Practice preferences">
+          <p class="label" style="margin-bottom:10px">Preferences</p>
+          <div class="pref-row">
+            <span>Daily goal</span>
+            <div class="stepper">
+              <button type="button" id="prefGoalDec" aria-label="Decrease daily goal">−</button>
+              <strong id="prefGoalVal" class="num">2</strong>
+              <button type="button" id="prefGoalInc" aria-label="Increase daily goal">+</button>
+            </div>
+          </div>
+          <div class="pref-row">
+            <span>Text size</span>
+            <div class="mini-seg" id="prefFontSeg" role="group" aria-label="Default text size">
+              <button type="button" data-pfont="0">S</button>
+              <button type="button" data-pfont="1">M</button>
+              <button type="button" data-pfont="2">L</button>
+              <button type="button" data-pfont="3">XL</button>
+            </div>
+          </div>
+          <label class="pref-row pref-chk">
+            <span>Live error colours</span>
+            <input type="checkbox" id="prefErrHl" checked />
+          </label>
+          <label class="pref-row pref-chk">
+            <span>Zen fade while typing</span>
+            <input type="checkbox" id="prefZen" checked />
+          </label>
+        </div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light theme">
+        <svg id="themeIconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="display:none">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+        </svg>
+        <svg id="themeIconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
+        </svg>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -66,8 +113,8 @@
 <footer class="site-footer">
   <div class="footer-in">
     <span class="foot-brand"><strong>Riyaz</strong> &mdash; roz ka riyaz, pakki selection.</span>
-    <span class="foot-note">Practice build. Your results stay on this device. Scoring follows each exam&rsquo;s official rules.</span>
-    <span class="foot-ver">© 2026 Riyaz · v3</span>
+    <span class="foot-note">Offline-ready. Saved on this device only.</span>
+    <span class="foot-ver">© 2026 Riyaz · v3.1</span>
   </div>
 </footer>
 

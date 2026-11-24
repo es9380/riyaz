@@ -2,6 +2,8 @@
    Pages render into #view. The typing stage is launched through
    launchStage(), which hands a contract config to core/engine.js. */
 
+import * as store from "./core/store.js";
+
 const view = document.getElementById("view");
 
 /* ——— Theme (key + JSON format shared with core/store.js) ——— */
@@ -34,6 +36,71 @@ document.getElementById("themeToggle").addEventListener("click", () => {
   applyTheme(currentTheme() === "light" ? "dark" : "light");
 });
 applyTheme(currentTheme());
+
+/* ——— Quick preferences menu in header ——— */
+function initPrefsMenu() {
+  const toggle = document.getElementById("prefsToggle");
+  const menu = document.getElementById("prefsMenu");
+  if (!toggle || !menu) return;
+
+  const goalVal = document.getElementById("prefGoalVal");
+  const goalDec = document.getElementById("prefGoalDec");
+  const goalInc = document.getElementById("prefGoalInc");
+  const errChk = document.getElementById("prefErrHl");
+  const zenChk = document.getElementById("prefZen");
+  const fontBtns = menu.querySelectorAll("[data-pfont]");
+
+  function sync() {
+    if (goalVal) goalVal.textContent = String(store.goal());
+    const fs = store.fontStep();
+    fontBtns.forEach((b) => b.setAttribute("aria-pressed", String(parseInt(b.dataset.pfont, 10) === fs)));
+    if (errChk) errChk.checked = store.setting("errHl") !== false;
+    if (zenChk) zenChk.checked = store.setting("zen") !== false;
+  }
+
+  function setOpen(open) {
+    menu.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) sync();
+  }
+
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setOpen(menu.hidden);
+  });
+  document.addEventListener("click", (e) => {
+    if (!menu.hidden && !menu.contains(e.target) && !toggle.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !menu.hidden) setOpen(false);
+  });
+
+  if (goalDec) goalDec.addEventListener("click", () => {
+    store.setGoal(store.goal() - 1);
+    sync();
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  });
+  if (goalInc) goalInc.addEventListener("click", () => {
+    store.setGoal(store.goal() + 1);
+    sync();
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  });
+  fontBtns.forEach((b) => b.addEventListener("click", () => {
+    store.setFontStep(parseInt(b.dataset.pfont, 10));
+    sync();
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  }));
+  if (errChk) errChk.addEventListener("change", () => {
+    store.setting("errHl", errChk.checked);
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  });
+  if (zenChk) zenChk.addEventListener("change", () => {
+    store.setting("zen", zenChk.checked);
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  });
+  sync();
+}
+initPrefsMenu();
 
 /* ——— Shared exam selection (Home hero + Arena) ——— */
 const EXAM_KEY = "tsn_exam_v1";
