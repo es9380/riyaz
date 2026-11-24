@@ -520,6 +520,120 @@
   font-size: 1.05rem;
 }
 
+.hub-head-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 20px;
+}
+
+.faq-list {
+  border-top: 1px solid var(--line);
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--line);
+  padding: 11px 4px;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--fs-small);
+  color: var(--ink);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.faq-item summary::after {
+  content: "+";
+  color: var(--accent);
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: none;
+}
+
+.faq-item[open] summary::after {
+  content: "−";
+}
+
+.faq-item p {
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  max-width: 72ch;
+}
+
+.search-input {
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--ink);
+  background: var(--bg-raise);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  min-width: 190px;
+  flex: 1 1 200px;
+  max-width: 280px;
+}
+
+.search-input:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.field-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dur-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dur-row input {
+  width: 78px;
+  flex: none;
+}
+
+.dur-presets {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.chip-btn {
+  padding: 5px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  font-size: var(--fs-micro);
+  font-weight: 650;
+  color: var(--ink-2);
+  background: var(--surface);
+  transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.chip-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.chip-btn[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
 /* ——— Hub ——— */
 
 .hub-spec {
