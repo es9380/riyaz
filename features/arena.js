@@ -257,7 +257,7 @@ export async function renderHub(view, examId) {
       ${["all", "easy", "medium", "hard"].map((d) => `<button type="button" data-diff="${d}" aria-pressed="${d === "all"}">${d === "all" ? "All" : d[0].toUpperCase() + d.slice(1)}</button>`).join("")}
     </div>
     <div class="seg" role="group" aria-label="Filter by status" id="statusSeg">
-      ${[["all", "All"], ["untried", "Untried"], ["tried", "Tried"]].map(([id, lbl]) => `<button type="button" data-status="${id}" aria-pressed="${id === "all"}">${lbl}</button>`).join("")}
+      ${[["all", "All"], ["untried", "Not Attempted"], ["tried", "Attempted"]].map(([id, lbl]) => `<button type="button" data-status="${id}" aria-pressed="${id === "all"}">${lbl}</button>`).join("")}
     </div>
     <input class="search-input" id="mockSearch" type="search" placeholder="Search topic or #…" aria-label="Search mocks" />
     <span class="count-note" id="mockCount" aria-live="polite">Loading…</span>
@@ -291,7 +291,7 @@ export async function renderHub(view, examId) {
   const nextUntried = untriedPool[0] || tests[0];
   if (quickBtn && nextUntried) {
     quickBtn.disabled = false;
-    quickBtn.innerHTML = `${icon("play", 15)} <span>${untriedPool.length ? `Next Untried (#${nextUntried.num})` : `Retake #${nextUntried.num}`}</span>`;
+    quickBtn.innerHTML = `${icon("play", 15)} <span>${untriedPool.length ? `Next Not Attempted (#${nextUntried.num})` : `Retake #${nextUntried.num}`}</span>`;
     quickBtn.addEventListener("click", () => startMock(nextUntried));
   }
   if (randBtn && tests.length) {
@@ -323,7 +323,7 @@ export async function renderHub(view, examId) {
       const tickHtml = best && best.qualified === true ? ' <span class="tick" aria-label="Qualified">✓</span>' : "";
       const bestSub = best
         ? `${best.acc != null ? `${Number(best.acc).toFixed(0)}% acc · ` : ""}${best.qualified === true ? "Qualified" : best.qualified === false ? "Below bar" : "Best"}`
-        : "Not tried";
+        : "Not Attempted";
       return `
       <button type="button" class="mock-row" data-tid="${esc(t.id)}">
         <span class="mock-num num">${t.num}</span>
@@ -333,7 +333,7 @@ export async function renderHub(view, examId) {
         </span>
         <span class="mock-best">${best != null
           ? `<span class="mb-net num">${Math.round(best.net)}${tickHtml}</span><span class="mb-label" style="display:block">${bestSub}</span>`
-          : `<span class="mb-label">Not tried</span>`}</span>
+          : `<span class="mb-label">Not Attempted</span>`}</span>
         <span class="chip chip-${esc(t.diff)}">${esc(t.diff)}</span>
         <span class="mock-go">${icon("play", 13)} Start</span>
       </button>`;
