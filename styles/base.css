@@ -367,11 +367,19 @@ button {
 
 .seg {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   padding: 3px;
   gap: 2px;
   background: var(--bg-raise);
+}
+
+@media (max-width: 640px) {
+  .seg {
+    border-radius: var(--radius);
+  }
 }
 
 .seg button {

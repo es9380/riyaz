@@ -13,13 +13,11 @@
        weakWords }  (+ optional exam extras: full, half, errorPct, …) */
 
 const K_HIST = "tsn_history_v1";
-const K_NCRTC = "tsn_ncrtc_v1";
 const K_SET = "tsn_settings_v1";
 const K_GOAL = "tsn_goal_v1";
 const K_THEME = "tsn_theme_v1";
 const K_FONT = "tsn_font_v1";
 const MAX_HIST = 500;
-const MAX_NCRTC = 300;
 
 function read(key, fallback) {
   try {
@@ -75,40 +73,6 @@ export function clearHistory() {
   try { localStorage.removeItem(K_HIST); } catch (e) {}
 }
 
-/* ---------------- NCRTC MCQ history (isolated from typing history) ---------------- */
-
-export function ncrtcHistory() {
-  const h = read(K_NCRTC, []);
-  return Array.isArray(h) ? h : [];
-}
-
-export function addNcrtcResult(entry) {
-  if (!entry || typeof entry !== "object") return null;
-  const now = new Date();
-  const full = Object.assign({}, entry);
-  if (!full.id) full.id = "nc-" + newId();
-  if (!full.ts) full.ts = now.toISOString();
-  const h = ncrtcHistory();
-  h.unshift(full);
-  if (h.length > MAX_NCRTC) h.length = MAX_NCRTC;
-  write(K_NCRTC, h);
-  return full;
-}
-
-export function bestNcrtcFor(testId) {
-  if (!testId) return null;
-  let best = null;
-  ncrtcHistory().forEach(function (x) {
-    if (x.testId !== testId || typeof x.pct !== "number") return;
-    if (!best || x.pct > best.pct) best = x;
-  });
-  return best;
-}
-
-export function clearNcrtcHistory() {
-  try { localStorage.removeItem(K_NCRTC); } catch (e) {}
-}
-
 /* ---------------- backup export / import ---------------- */
 
 export function exportBackup() {
@@ -116,7 +80,6 @@ export function exportBackup() {
     version: 1,
     exportedAt: new Date().toISOString(),
     history: history(),
-    ncrtcHistory: ncrtcHistory(),
     goal: goal(),
     theme: theme(),
     fontStep: fontStep(),
@@ -126,40 +89,23 @@ export function exportBackup() {
 
 export function importBackup(data) {
   if (!data || typeof data !== "object") return { ok: false, reason: "Invalid backup file." };
-  if (!Array.isArray(data.history) && !Array.isArray(data.ncrtcHistory)) {
-    return { ok: false, reason: "Backup contains no typing or NCRTC history." };
+  if (!Array.isArray(data.history)) {
+    return { ok: false, reason: "Backup contains no typing history." };
   }
   let importedCount = 0;
-  if (Array.isArray(data.history)) {
-    const existing = history();
-    const seen = new Set(existing.map((x) => x.id).filter(Boolean));
-    const merged = existing.slice();
-    for (const item of data.history) {
-      if (!item || typeof item !== "object") continue;
-      if (item.id && seen.has(item.id)) continue;
-      if (item.id) seen.add(item.id);
-      merged.push(item);
-      importedCount++;
-    }
-    merged.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
-    if (merged.length > MAX_HIST) merged.length = MAX_HIST;
-    write(K_HIST, merged);
+  const existing = history();
+  const seen = new Set(existing.map((x) => x.id).filter(Boolean));
+  const merged = existing.slice();
+  for (const item of data.history) {
+    if (!item || typeof item !== "object") continue;
+    if (item.id && seen.has(item.id)) continue;
+    if (item.id) seen.add(item.id);
+    merged.push(item);
+    importedCount++;
   }
-  if (Array.isArray(data.ncrtcHistory)) {
-    const existingN = ncrtcHistory();
-    const seenN = new Set(existingN.map((x) => x.id).filter(Boolean));
-    const mergedN = existingN.slice();
-    for (const item of data.ncrtcHistory) {
-      if (!item || typeof item !== "object") continue;
-      if (item.id && seenN.has(item.id)) continue;
-      if (item.id) seenN.add(item.id);
-      mergedN.push(item);
-      importedCount++;
-    }
-    mergedN.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
-    if (mergedN.length > MAX_NCRTC) mergedN.length = MAX_NCRTC;
-    write(K_NCRTC, mergedN);
-  }
+  merged.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+  if (merged.length > MAX_HIST) merged.length = MAX_HIST;
+  write(K_HIST, merged);
   if (typeof data.goal === "number") setGoal(data.goal);
   return { ok: true, importedCount };
 }

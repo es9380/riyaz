@@ -4,17 +4,25 @@
 import { launchStage } from "../app.js";
 import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
-
-const esc = (s) =>
-  String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
+import { esc } from "../core/util.js";
 
 function weakWordCounts(hist) {
   const map = {};
-  hist.slice(0, 12).forEach((h) =>
-    Object.entries(h.weakWords || {}).forEach(([w, n]) => { map[w] = (map[w] || 0) + (n || 0); })
-  );
+  hist.slice(0, 12).forEach((h) => {
+    const entries = Object.entries(h.weakWords || {});
+    if (entries.length) {
+      entries.forEach(([w, n]) => { map[w] = (map[w] || 0) + (n || 0); });
+    } else if (Array.isArray(h.mistakeDetail)) {
+      /* E1/E2 (SSC/RRB) stores missed words in mistakeDetail instead of weakWords */
+      h.mistakeDetail.forEach((d) => {
+        const raw = d && d.exp ? String(d.exp).trim() : "";
+        if (!raw || raw === "(extra)") return;
+        raw.split(/\s+/).forEach((w) => {
+          if (w) map[w] = (map[w] || 0) + 1;
+        });
+      });
+    }
+  });
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
 }
 
@@ -37,10 +45,30 @@ function weakKeyList(hist) {
     .map(([key, count]) => ({ key, count }));
 }
 
+function buildBestByTest(hist) {
+  const map = {};
+  for (const h of hist) {
+    if (!h.testId) continue;
+    const prev = map[h.testId];
+    const accChar = h.words > 0 ? ((h.words - (h.errs || 0)) / h.words) * 100 : (h.acc || 0);
+    const mastered = h.mode === "drill" && accChar >= 98 && (h.words || 0) >= 10;
+    if (!prev) {
+      map[h.testId] = { net: h.net || 0, acc: h.acc || 0, mastered };
+    } else {
+      prev.net = Math.max(prev.net, h.net || 0);
+      prev.acc = Math.max(prev.acc, h.acc || 0);
+      prev.mastered = prev.mastered || mastered;
+    }
+  }
+  return map;
+}
+
 export async function renderStudio(view) {
   const hist = store.history();
   const weakWords = weakWordCounts(hist);
   const weakKeys = weakKeyList(hist);
+  const bestByTest = buildBestByTest(hist);
+  const revWords = weakWords.slice(0, 10);
 
   view.innerHTML = `
   <section class="page-head">
@@ -52,13 +80,21 @@ export async function renderStudio(view) {
 
   <section class="section" aria-labelledby="revH" style="margin-top:30px">
     <div class="section-head"><h2 id="revH">Your revision set</h2></div>
-    ${weakWords.length ? `
+    ${revWords.length ? `
       <p style="color:var(--ink-2);max-width:62ch">Built from your last ${Math.min(12, hist.length)} results.
         These are the words that have actually cost you marks — not a generic list.</p>
+      <div class="word-chips" aria-label="Weak words in your revision set" style="margin-top:12px">
+        ${revWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}
+      </div>
       ${weakKeys.length ? `<div class="weak-keys" aria-label="Your weakest keys">
         ${weakKeys.map((k) => `<span class="key-chip">${esc(k.key === " " ? "space" : k.key)}${k.count != null ? `<b>×${k.count}</b>` : ""}</span>`).join("")}
       </div>` : ""}
-      <p style="margin-top:16px"><button class="btn btn-primary" id="revStart" type="button">Start revision — ${weakWords.slice(0, 8).length} weak words</button></p>`
+      <div class="rev-actions">
+        <div class="seg" role="group" aria-label="Revision duration" id="revDurSeg">
+          ${[3, 5, 10].map((m) => `<button type="button" data-revdur="${m}" aria-pressed="${m === 5}">${m} min</button>`).join("")}
+        </div>
+        <button class="btn btn-primary" id="revStart" type="button">Start revision — ${revWords.length} weak word${revWords.length === 1 ? "" : "s"}</button>
+      </div>`
     : `
       <div class="empty-note">
         <p><strong>No revision set yet.</strong></p>
@@ -69,10 +105,19 @@ export async function renderStudio(view) {
 
   <div id="studioBody"><p style="color:var(--ink-3);margin-top:34px">Loading warm-ups and drills…</p></div>`;
 
+  let revDur = 5;
+  view.querySelectorAll("#revDurSeg [data-revdur]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      revDur = parseInt(btn.dataset.revdur, 10) || 5;
+      view.querySelectorAll("#revDurSeg [data-revdur]").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b === btn)));
+    });
+  });
+
   const revBtn = view.querySelector("#revStart");
   if (revBtn) {
     revBtn.addEventListener("click", () => {
-      const words = weakWords.slice(0, 10).map(([w]) => w);
+      const words = revWords.map(([w]) => w);
       const rounds = [];
       for (let r = 0; r < 5; r++) rounds.push(...words);
       launchStage({
@@ -80,7 +125,7 @@ export async function renderStudio(view) {
         mode: "revision",
         title: "Revision — your weak words",
         text: rounds.join(" "),
-        durationMin: 5,
+        durationMin: revDur,
         backspaceDefault: true,
         testId: "revision-weak",
       });
@@ -93,95 +138,201 @@ export async function renderStudio(view) {
   ]);
 
   const body = view.querySelector("#studioBody");
-  body.innerHTML = `
-  <section class="section" aria-labelledby="wuH">
-    <div class="section-head">
-      <h2 id="wuH">Warm-ups</h2>
-      <span class="aside">15-minute sets, or one short subset at a time</span>
-    </div>
-    ${WARMUPS.map((set) => `
-    <div class="set-block">
-      <div class="set-head">
-        <span class="set-name">${esc(set.name)}</span>
-        <span class="chip chip-${esc(set.level)}">${esc(set.level)}</span>
-        <span class="set-desc">${esc(set.desc || "")}</span>
-        <button class="btn" type="button" data-set="${esc(set.id)}">Full set · 15 min</button>
-      </div>
-      <div class="subset-rows">
-        ${(set.subsets || []).slice(1).map((sub) => `
-        <button type="button" class="item-row" data-subset="${esc(sub.id)}" data-setid="${esc(set.id)}">
-          <span>
-            <span class="ir-name">Subset ${sub.n} — ${esc(sub.topic || "Practice")}</span>
-            <span class="ir-desc" style="display:block">${sub.text.split(/\s+/).filter(Boolean).length} words</span>
-          </span>
-          <span class="mock-go">Start</span>
-        </button>`).join("")}
-      </div>
-    </div>`).join("")}
-  </section>
+  if (!body) return;
 
-  <section class="section" aria-labelledby="drillH">
-    <div class="section-head">
-      <h2 id="drillH">Drills</h2>
-      <span class="aside">${DRILLS.reduce((n, p) => n + p.items.length, 0)} drills in ${DRILLS.length} parts</span>
+  const totalDrills = DRILLS.reduce((n, p) => n + p.items.length, 0);
+  const masteredCount = DRILLS.reduce(
+    (n, p) => n + p.items.filter((d) => bestByTest[d.id]?.mastered).length,
+    0,
+  );
+
+  body.innerHTML = `
+  <div class="mock-tools" style="margin-top:36px">
+    <div class="seg" role="group" aria-label="Filter studio sections" id="studioSecSeg">
+      <button type="button" data-sec="all" aria-pressed="true">All</button>
+      <button type="button" data-sec="warmups" aria-pressed="false">Warm-ups (${WARMUPS.length})</button>
+      <button type="button" data-sec="drills" aria-pressed="false">Drills (${totalDrills})</button>
     </div>
-    ${DRILLS.map((part) => `
-    <div class="studio-group">
-      <h3>${esc(part.part)}</h3>
-      <div class="item-rows">
-        ${part.items.map((d) => `
-        <button type="button" class="item-row" data-drill="${esc(d.id)}">
-          <span>
-            <span class="ir-name">${esc(d.name)}</span>
-            ${d.desc ? `<span class="ir-desc" style="display:block">${esc(d.desc)}</span>` : ""}
-          </span>
-          <span style="display:flex;gap:10px;align-items:center">
-            ${DIFF && DIFF[d.id] ? `<span class="chip chip-${esc(DIFF[d.id])}">${esc(DIFF[d.id])}</span>` : ""}
-            <span class="mock-go">Start</span>
-          </span>
-        </button>`).join("")}
-      </div>
-    </div>`).join("")}
-  </section>`;
+    <input class="search-input" id="studioSearch" type="search" placeholder="Filter warm-ups or drills…" aria-label="Filter warm-ups or drills" />
+    <span class="count-note num" id="studioStatsNote">${masteredCount} of ${totalDrills} drills mastered (≥98% acc)</span>
+  </div>
+  <div id="studioList"></div>`;
+
+  const listHost = body.querySelector("#studioList");
+  const searchEl = body.querySelector("#studioSearch");
+  let sectionFilter = "all";
+  let drillPartFilter = "all";
+  let query = "";
 
   const allSubsets = {};
   WARMUPS.forEach((set) => (set.subsets || []).forEach((s) => { allSubsets[s.id] = { ...s, setName: set.name }; }));
 
-  body.querySelectorAll("[data-set]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const set = WARMUPS.find((s) => s.id === btn.dataset.set);
-      if (!set) return;
-      launchStage({
-        examId: "hcm", mode: "warmup", title: set.name, text: set.text,
-        durationMin: 15, backspaceDefault: true, testId: set.id,
-      });
-    });
-  });
+  function scoreBadge(id) {
+    const b = bestByTest[id];
+    if (!b) return "";
+    return `<span class="studio-score num">${b.mastered ? `<span class="tick-ok">✓ Mastered · </span>` : ""}${Math.round(b.net)} WPM</span>`;
+  }
 
-  body.querySelectorAll("[data-subset]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const sub = allSubsets[btn.dataset.subset];
-      if (!sub) return;
-      launchStage({
-        examId: "hcm", mode: "warmup",
-        title: `${sub.setName} — Subset ${sub.n}`,
-        text: sub.text, durationMin: 5, backspaceDefault: true, testId: sub.id,
-      });
-    });
-  });
+  function paintStudio() {
+    const q = query.trim().toLowerCase();
+    const showWarmups = sectionFilter === "all" || sectionFilter === "warmups";
+    const showDrills = sectionFilter === "all" || sectionFilter === "drills";
 
-  body.querySelectorAll("[data-drill]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      let drill = null;
-      for (const part of DRILLS) {
-        drill = part.items.find((d) => d.id === btn.dataset.drill) || drill;
-        if (drill) break;
+    let wuHtml = "";
+    if (showWarmups) {
+      const filteredSets = WARMUPS.map((set) => {
+        const setMatches = !q || `${set.name} ${set.desc || ""} ${set.level}`.toLowerCase().includes(q);
+        const subs = (set.subsets || []).slice(1).filter((sub) =>
+          !q || setMatches || `subset ${sub.n} ${sub.topic || ""}`.toLowerCase().includes(q)
+        );
+        if (!setMatches && !subs.length) return null;
+        return { set, subs };
+      }).filter(Boolean);
+
+      if (filteredSets.length) {
+        wuHtml = `
+        <section class="section" aria-labelledby="wuH">
+          <div class="section-head">
+            <h2 id="wuH">Warm-ups</h2>
+            <span class="aside">15-minute sets, or one short subset at a time</span>
+          </div>
+          ${filteredSets.map(({ set, subs }) => `
+          <div class="set-block">
+            <div class="set-head">
+              <span class="set-name">${esc(set.name)}</span>
+              <span class="chip chip-${esc(set.level)}">${esc(set.level)}</span>
+              ${scoreBadge(set.id)}
+              <span class="set-desc">${esc(set.desc || "")}</span>
+              <button class="btn" type="button" data-set="${esc(set.id)}">Full set · 15 min</button>
+            </div>
+            ${subs.length ? `<div class="subset-rows">
+              ${subs.map((sub) => `
+              <button type="button" class="item-row" data-subset="${esc(sub.id)}" data-setid="${esc(set.id)}">
+                <span>
+                  <span class="ir-name">Subset ${sub.n} — ${esc(sub.topic || "Practice")}</span>
+                  <span class="ir-desc" style="display:block">${sub.text.split(/\s+/).filter(Boolean).length} words</span>
+                </span>
+                <span style="display:flex;gap:10px;align-items:center">
+                  ${scoreBadge(sub.id)}
+                  <span class="mock-go">Start</span>
+                </span>
+              </button>`).join("")}
+            </div>` : ""}
+          </div>`).join("")}
+        </section>`;
       }
-      if (!drill) return;
-      launchStage({
-        examId: "hcm", mode: "drill", title: drill.name, text: drill.text,
-        durationMin: 5, backspaceDefault: true, testId: drill.id,
+    }
+
+    let drillHtml = "";
+    if (showDrills) {
+      const filteredParts = DRILLS.map((part, idx) => {
+        if (drillPartFilter !== "all" && String(idx) !== drillPartFilter) return null;
+        const partMatches = !q || part.part.toLowerCase().includes(q);
+        const items = part.items.filter((d) =>
+          !q || partMatches || `${d.name} ${d.desc || ""}`.toLowerCase().includes(q)
+        );
+        if (!items.length) return null;
+        return { part: part.part, items };
+      }).filter(Boolean);
+
+      const partTabs = `
+      <div class="part-chips" role="group" aria-label="Drill parts" id="drillPartSeg">
+        <button type="button" class="chip-btn" data-part="all" aria-pressed="${drillPartFilter === "all"}">All parts</button>
+        ${DRILLS.map((p, idx) => {
+          const shortName = p.part.replace(/^Part \d+\s*·\s*/, "");
+          return `<button type="button" class="chip-btn" data-part="${idx}" aria-pressed="${drillPartFilter === String(idx)}">${esc(shortName)}</button>`;
+        }).join("")}
+      </div>`;
+
+      drillHtml = `
+      <section class="section" aria-labelledby="drillH">
+        <div class="section-head">
+          <h2 id="drillH">Drills</h2>
+          <span class="aside">${totalDrills} drills in ${DRILLS.length} parts</span>
+        </div>
+        ${partTabs}
+        ${filteredParts.length ? filteredParts.map((part) => `
+        <div class="studio-group">
+          <h3>${esc(part.part)}</h3>
+          <div class="item-rows">
+            ${part.items.map((d) => `
+            <button type="button" class="item-row" data-drill="${esc(d.id)}">
+              <span>
+                <span class="ir-name">${esc(d.name)}</span>
+                ${d.desc ? `<span class="ir-desc" style="display:block">${esc(d.desc)}</span>` : ""}
+              </span>
+              <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+                ${scoreBadge(d.id)}
+                ${DIFF && DIFF[d.id] ? `<span class="chip chip-${esc(DIFF[d.id])}">${esc(DIFF[d.id])}</span>` : ""}
+                <span class="mock-go">Start</span>
+              </span>
+            </button>`).join("")}
+          </div>
+        </div>`).join("") : `<div class="empty-note" style="margin-top:16px"><p>No matching drills found.</p></div>`}
+      </section>`;
+    }
+
+    listHost.innerHTML = (wuHtml + drillHtml) || `<div class="empty-note" style="margin-top:20px"><p>No matching warm-ups or drills found.</p></div>`;
+
+    listHost.querySelectorAll("#drillPartSeg [data-part]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        drillPartFilter = btn.dataset.part;
+        paintStudio();
       });
     });
+
+    listHost.querySelectorAll("[data-set]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const set = WARMUPS.find((s) => s.id === btn.dataset.set);
+        if (!set) return;
+        launchStage({
+          examId: "hcm", mode: "warmup", title: set.name, text: set.text,
+          durationMin: 15, backspaceDefault: true, testId: set.id,
+        });
+      });
+    });
+
+    listHost.querySelectorAll("[data-subset]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sub = allSubsets[btn.dataset.subset];
+        if (!sub) return;
+        launchStage({
+          examId: "hcm", mode: "warmup",
+          title: `${sub.setName} — Subset ${sub.n}`,
+          text: sub.text, durationMin: 5, backspaceDefault: true, testId: sub.id,
+        });
+      });
+    });
+
+    listHost.querySelectorAll("[data-drill]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        let drill = null;
+        for (const part of DRILLS) {
+          const hit = part.items.find((d) => d.id === btn.dataset.drill);
+          if (hit) { drill = hit; break; }
+        }
+        if (!drill) return;
+        launchStage({
+          examId: "hcm", mode: "drill", title: drill.name, text: drill.text,
+          durationMin: 5, backspaceDefault: true, testId: drill.id,
+        });
+      });
+    });
+  }
+
+  body.querySelectorAll("#studioSecSeg [data-sec]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sectionFilter = btn.dataset.sec;
+      body.querySelectorAll("#studioSecSeg [data-sec]").forEach((b) =>
+        b.setAttribute("aria-pressed", String(b === btn)));
+      paintStudio();
+    });
   });
+
+  searchEl.addEventListener("input", () => {
+    query = searchEl.value;
+    paintStudio();
+  });
+
+  paintStudio();
 }
