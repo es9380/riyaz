@@ -44,7 +44,7 @@
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
       Riyaz
     </a>
-    <nav class="main-nav" aria-label="Main">
+    <nav class="main-nav" id="mainNav" aria-label="Main">
       <a href="#/" data-nav="home">
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Home</span>
@@ -57,12 +57,26 @@
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>
         <span>Drills</span>
       </a>
+      <a href="#/vocab" data-nav="vocab">
+        <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        <span>Vocab</span>
+      </a>
       <a href="#/progress" data-nav="progress">
         <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>Progress</span>
       </a>
     </nav>
     <div class="header-actions">
+      <div class="account-wrap">
+        <button class="account-btn" id="signInBtn" type="button" aria-expanded="false" aria-controls="signInMenu">
+          <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Sign in</span>
+        </button>
+        <div class="account-pop" id="signInMenu" hidden role="dialog" aria-label="Account status">
+          <p class="account-pop-title">Accounts are coming soon</p>
+          <p class="account-pop-sub">Cloud sync and profiles are on the way. For now, all results stay saved on this device.</p>
+        </div>
+      </div>
       <div class="prefs-wrap">
         <button class="icon-btn" id="prefsToggle" type="button" aria-label="Quick settings" aria-expanded="false" aria-controls="prefsMenu">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
@@ -104,6 +118,10 @@
           <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>
         </svg>
       </button>
+      <button class="icon-btn menu-toggle" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav">
+        <svg id="menuIconOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        <svg id="menuIconClose" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -114,7 +132,7 @@
   <div class="footer-in">
     <span class="foot-brand"><strong>Riyaz</strong> &mdash; roz ka riyaz, pakki selection.</span>
     <span class="foot-note">Offline-ready. Saved on this device only.</span>
-    <span class="foot-ver">© 2026 Riyaz · v3.6</span>
+    <span class="foot-ver">© 2026 Riyaz · v3.7</span>
   </div>
 </footer>
 

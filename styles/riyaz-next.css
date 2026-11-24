@@ -20,18 +20,18 @@ body {
 }
 
 /* Header: glass bar, pill nav */
-.site-header { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); }
+.site-header { background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); }
 .brand { gap: 10px; align-items: center; font-size: 1.3rem; font-weight: 800; }
 .brand-mark { width: 22px; height: 22px; border-radius: 0; background: none; display: inline-flex; align-items: flex-end; gap: 3px; }
 .brand-mark i { display: block; width: 5px; border-radius: 2px; background: var(--accent); }
 .brand-mark i:nth-child(1) { height: 9px; opacity: .55; }
 .brand-mark i:nth-child(2) { height: 15px; opacity: .8; }
 .brand-mark i:nth-child(3) { height: 22px; }
-.main-nav { gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 60%, transparent); }
-.main-nav a { border-radius: var(--radius-pill); padding: 7px 14px; font-weight: 600; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.main-nav { gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.main-nav a { border-radius: var(--radius-pill); padding: 7px 12px; font-weight: 600; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
 .main-nav a:hover { background: var(--accent-dim); }
 .main-nav a[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
-.theme-toggle { border: 1px solid var(--line); border-radius: 50%; transition: transform .3s var(--ease), border-color var(--dur); }
+.theme-toggle, .icon-btn { border: 1px solid var(--line); border-radius: 50%; transition: transform .25s var(--ease), border-color var(--dur); }
 .theme-toggle:hover { border-color: var(--accent); transform: rotate(18deg); }
 
 /* Buttons */
@@ -119,27 +119,46 @@ body {
 .footer-in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: var(--ink-3); font-size: var(--fs-small); }
 .foot-brand strong { font-family: var(--font-display); color: var(--ink); }
 
-/* Mobile: bottom tab bar (hidden on the typing stage so it never covers the sheet) */
-@media (max-width: 720px) {
-  /* The header's backdrop-filter makes it the containing block for fixed
-     descendants, which pinned the bottom nav to the header box instead of
-     the viewport (QA v3, item 4). On mobile the header uses a solid ground
-     so scrolled page content never bleeds through behind it. */
+/* Mobile & Tablet: clean top header + hamburger dropdown drawer */
+@media (max-width: 860px) {
   .site-header { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
-  .header-in { gap: 12px; }
-  .header-in .header-actions { margin-left: auto; }
+  .header-in { gap: 10px; }
+  .menu-toggle { display: grid; }
   .main-nav {
-    position: fixed; left: 8px; right: 8px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 95;
-    display: flex; justify-content: space-between; gap: 4px; overflow: hidden; padding: 5px;
-    background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    display: none;
+    position: fixed;
+    top: calc(var(--header-h) + 8px);
+    left: 12px;
+    right: 12px;
+    z-index: 150;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 10px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
     box-shadow: var(--shadow);
   }
-  .main-nav a {
-    flex: 1 1 0; flex-direction: column; justify-content: center; gap: 3px; text-align: center;
-    padding: 7px 6px; font-size: .72rem; letter-spacing: 0; white-space: nowrap;
+  .main-nav.open {
+    display: flex;
+    animation: drawer-in 0.18s var(--ease) both;
   }
-  body:has(#view.view-stage) .main-nav { display: none; }
-  .site-footer { padding-bottom: 84px; }
+  @keyframes drawer-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .main-nav a {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 11px 14px;
+    font-size: 0.95rem;
+    border-radius: var(--radius);
+  }
+  .account-btn {
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
   .exam-row { padding: 20px 16px 20px 58px; }
   .exam-row::before { left: 14px; }
 }

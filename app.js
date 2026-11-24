@@ -102,6 +102,68 @@ function initPrefsMenu() {
 }
 initPrefsMenu();
 
+/* ——— Header Account & Mobile Drawer ——— */
+function initHeaderMenus() {
+  const signBtn = document.getElementById("signInBtn");
+  const signMenu = document.getElementById("signInMenu");
+  const menuBtn = document.getElementById("menuToggle");
+  const nav = document.getElementById("mainNav");
+  const icoOpen = document.getElementById("menuIconOpen");
+  const icoClose = document.getElementById("menuIconClose");
+
+  function setSignOpen(open) {
+    if (!signBtn || !signMenu) return;
+    signMenu.hidden = !open;
+    signBtn.setAttribute("aria-expanded", String(open));
+  }
+
+  function setDrawerOpen(open) {
+    if (!menuBtn || !nav) return;
+    nav.classList.toggle("open", open);
+    menuBtn.setAttribute("aria-expanded", String(open));
+    menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    if (icoOpen) icoOpen.style.display = open ? "none" : "block";
+    if (icoClose) icoClose.style.display = open ? "block" : "none";
+  }
+
+  if (signBtn && signMenu) {
+    signBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setDrawerOpen(false);
+      setSignOpen(signMenu.hidden);
+    });
+  }
+  if (menuBtn && nav) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setSignOpen(false);
+      setDrawerOpen(!nav.classList.contains("open"));
+    });
+    nav.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => setDrawerOpen(false));
+    });
+  }
+  document.addEventListener("click", (e) => {
+    if (signMenu && !signMenu.hidden && !signMenu.contains(e.target) && !signBtn.contains(e.target)) {
+      setSignOpen(false);
+    }
+    if (nav && nav.classList.contains("open") && !nav.contains(e.target) && !menuBtn.contains(e.target)) {
+      setDrawerOpen(false);
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      setSignOpen(false);
+      setDrawerOpen(false);
+    }
+  });
+  window.addEventListener("hashchange", () => {
+    setSignOpen(false);
+    setDrawerOpen(false);
+  });
+}
+initHeaderMenus();
+
 /* ——— Shared exam selection (Home hero + Arena) ——— */
 const EXAM_KEY = "tsn_exam_v1";
 let examId = "hcm";
@@ -188,6 +250,7 @@ const routes = [
     run: (m, match) => m.renderHub(view, match[1]),
   },
   { re: /^studio$/, nav: "studio", load: () => import("features/studio.js"), run: (m) => m.renderStudio(view) },
+  { re: /^vocab$/, nav: "vocab", load: () => import("features/studio.js"), run: (m) => m.renderStudio(view, { initialSection: "vocab" }) },
   { re: /^progress$/, nav: "progress", load: () => import("features/progress.js"), run: (m) => m.renderProgress(view) },
 ];
 

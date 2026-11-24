@@ -71,17 +71,20 @@ function groupLevel(items, diffMap) {
   return "";
 }
 
-export async function renderStudio(view) {
+export async function renderStudio(view, opts = {}) {
   const hist = store.history();
   const weakWords = weakWordCounts(hist);
   const weakKeys = weakKeyList(hist);
   const bestByTest = buildBestByTest(hist);
   const revWords = weakWords.slice(0, 10);
+  const initialSec = opts && opts.initialSection === "vocab" ? "vocab" : "all";
 
   view.innerHTML = `
   <section class="page-head">
-    <h1>Drills &amp; Warm-ups</h1>
-    <p class="lede">Master weak words, warm-ups, finger patterns, and exam vocabulary.</p>
+    <h1>${initialSec === "vocab" ? "Vocabulary Drills" : "Drills & Warm-ups"}</h1>
+    <p class="lede">${initialSec === "vocab"
+      ? "Most-common English words, government terms, and long-word chunks."
+      : "Master weak words, warm-ups, finger patterns, and exam vocabulary."}</p>
   </section>
 
   ${revWords.length ? `
@@ -160,9 +163,9 @@ export async function renderStudio(view) {
   </div>
   <div class="mock-tools" style="margin-top:18px">
     <div class="seg" role="group" aria-label="Filter studio sections" id="studioSecSeg">
-      <button type="button" data-sec="all" aria-pressed="true">All</button>
+      <button type="button" data-sec="all" aria-pressed="${initialSec === "all"}">All</button>
       <button type="button" data-sec="warmups" aria-pressed="false">Warm-ups (${WARMUPS.length})</button>
-      <button type="button" data-sec="vocab" aria-pressed="false">Vocabulary</button>
+      <button type="button" data-sec="vocab" aria-pressed="${initialSec === "vocab"}">Vocabulary</button>
       <button type="button" data-sec="drills" aria-pressed="false">Drills (${totalDrills})</button>
     </div>
     <input class="search-input" id="studioSearch" type="search" placeholder="Search drills, sets or vocab…" aria-label="Search warm-ups or drills" />
@@ -171,7 +174,7 @@ export async function renderStudio(view) {
 
   const listHost = body.querySelector("#studioList");
   const searchEl = body.querySelector("#studioSearch");
-  let sectionFilter = "all";
+  let sectionFilter = initialSec;
   let query = "";
   const openBlocks = new Set();
 

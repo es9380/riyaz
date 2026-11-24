@@ -552,8 +552,8 @@ export function renderHome(view) {
   <section class="hero">
     <div class="hero-top">
       <div class="hero-copy">
-        <h1>One line a day,<br />in the register.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
-        <p class="hero-sub">Real exam rules, clean timing, instant error breakdown.</p>
+        <h1>Make speed your edge.<br />Clear the cutoff.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
+        <p class="hero-sub">Official exam rules, exact timers, and honest mistake scoring.</p>
         <div class="hero-facts" aria-label="Library overview">
           <span class="fact-pill">${icon("target", 14)} ${totalMocks} Exam Mocks</span>
           <span class="fact-pill">${icon("keyboard", 14)} ${COUNTS.drills} Drills</span>
@@ -580,7 +580,10 @@ export function renderHome(view) {
 
     <div class="demo" aria-label="Live typing demo — a practice sheet">
       <div class="sheet-top">
-        <span class="sheet-top-title">${esc(spec.short)} — Live Warm-up Sheet</span>
+        <span class="sheet-top-title">
+          <span class="sheet-seal" aria-hidden="true"></span>
+          ${esc(spec.short)} — Practice Sheet
+        </span>
         <span class="sheet-top-fields" aria-hidden="true">
           <span>Time <b>${spec.durationMin} min</b></span>
           <span>Target <b>${esc(sheetTarget)}</b></span>
@@ -592,9 +595,9 @@ export function renderHome(view) {
       </div>
       <div class="sheet-foot">
         <span class="demo-state"><span class="pulse" aria-hidden="true"></span><span class="demo-state-text">Live demo</span></span>
-        <span class="demo-hint">Click sheet &amp; type — auto-resumes after 12s idle.</span>
+        <span class="demo-hint">Click the paper and type — hands control back after 12s idle.</span>
         <span class="demo-hud" aria-hidden="true">
-          <span class="dh"><span>Speed</span><b class="dh-wpm num">0</b></span>
+          <span class="dh"><span>Speed</span><b class="dh-wpm num">0</b><span class="dh-u">WPM</span></span>
           <span class="dh"><span>Accuracy</span><b class="dh-acc num">100%</b></span>
         </span>
       </div>
