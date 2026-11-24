@@ -574,6 +574,59 @@ function examBest(hist, examId) {
   return { count: mine.length, mocksTried: triedIds.size, passed, bestNet };
 }
 
+function livingVisualHtml(idx) {
+  const scene = ((idx % 3) + 3) % 3;
+  const titles = ["Keystroke rhythm", "Speed trajectory", "Daily register"];
+  const keys = [
+    ["Q", "W", "E", "R", "T", "Y"],
+    ["A", "S", "D", "F", "G", "H"],
+    ["SPACE"],
+  ];
+  return `
+  <div class="living-visual" data-scene="${scene}" aria-hidden="true">
+    <div class="lv-head">
+      <span class="lv-title">${titles[scene]}</span>
+      <span class="lv-dots">
+        ${[0, 1, 2].map((d) => `<button type="button" class="lv-dot${d === scene ? " on" : ""}" data-lv="${d}" tabindex="-1" aria-label="Visual ${d + 1}"></button>`).join("")}
+      </span>
+    </div>
+    <div class="lv-stage">
+      ${scene === 0 ? `
+        <div class="lv-keys">
+          ${keys.map((row, ri) => `<div class="lv-krow">
+            ${row.map((k, ki) => `<span class="lv-key${k === "SPACE" ? " wide" : ""}" style="--kd:${((ri * 5 + ki * 2) % 9) * 0.28}s">${k}</span>`).join("")}
+          </div>`).join("")}
+        </div>` : scene === 1 ? `
+        <svg class="lv-svg" viewBox="0 0 260 74" fill="none">
+          <line x1="8" y1="30" x2="252" y2="30" stroke="var(--ok)" stroke-width="1" stroke-dasharray="4 4" opacity="0.65"/>
+          <text x="250" y="25" text-anchor="end" fill="var(--ok)" font-size="9" font-weight="700">30+ WPM</text>
+          <path class="lv-curve-bg" d="M10 62 C55 58, 82 48, 122 39 C160 30, 196 20, 248 12" stroke="var(--line-strong)" stroke-width="2" stroke-linecap="round"/>
+          <path class="lv-curve" d="M10 62 C55 58, 82 48, 122 39 C160 30, 196 20, 248 12" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle class="lv-dot-end" cx="248" cy="12" r="4" fill="var(--ok)"/>
+        </svg>` : `
+        <div class="lv-lines">
+          <div class="lv-line"><i style="--lw:86%;--ld:0s"></i></div>
+          <div class="lv-line"><i style="--lw:72%;--ld:0.35s"></i></div>
+          <div class="lv-line"><i style="--lw:92%;--ld:0.7s"></i></div>
+        </div>`}
+    </div>
+  </div>`;
+}
+
+let lvVisitIdx = null;
+function nextLivingScene() {
+  if (lvVisitIdx == null) {
+    try {
+      const prev = parseInt(localStorage.getItem("tsn_lv_idx") || "-1", 10);
+      lvVisitIdx = Number.isFinite(prev) ? (prev + 1) % 3 : 0;
+      localStorage.setItem("tsn_lv_idx", String(lvVisitIdx));
+    } catch (e) {
+      lvVisitIdx = 0;
+    }
+  }
+  return lvVisitIdx;
+}
+
 /* ——— Page ——— */
 
 export function renderHome(view) {
@@ -592,6 +645,7 @@ export function renderHome(view) {
   const activeExamStats = examBest(hist, examId);
   const step = normNextStep(safeNext(hist, examId), hist, examId);
   const totalMocks = COUNTS.mocks.hcm + COUNTS.mocks.chsl + COUNTS.mocks.cgl + COUNTS.mocks.rrb;
+  const lvScene = nextLivingScene();
 
   const sheetTarget = spec.targetWPM ? `${spec.targetWPM} WPM` : "Complete text";
   const sheetRule = spec.id === "hcm" ? "Marks 25" : spec.backspace ? "Backspace On" : "Backspace Off";
@@ -600,19 +654,13 @@ export function renderHome(view) {
   <section class="hero">
     <div class="hero-top">
       <div class="hero-copy">
-        <h1>Make speed your edge.<br />Clear the cutoff.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
+        <div class="hero-kicker-row">
+          <span class="fact-pill">${icon("target", 14)} ${totalMocks} Mocks · ${COUNTS.drills} Drills · ${COUNTS.warmups} Warm-ups</span>
+          <span class="pal-roost" aria-hidden="true"><piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></span>
+        </div>
+        <h1>Make speed your edge.<br />Clear the cutoff.</h1>
         <p class="hero-sub">Official exam rules, exact timers, and honest mistake scoring.</p>
-        <div class="hero-facts" aria-label="Library overview">
-          <span class="fact-pill">${icon("target", 14)} ${totalMocks} Exam Mocks</span>
-          <span class="fact-pill">${icon("keyboard", 14)} ${COUNTS.drills} Drills</span>
-          <span class="fact-pill">${icon("flame", 14)} ${COUNTS.warmups} Warm-ups</span>
-        </div>
-      </div>
-      <div class="hero-action-box">
-        <div class="exam-switch hero-exams" role="group" aria-label="Your active exam">
-          ${EXAM_SPECS.map((s) => `<button type="button" data-exam="${s.id}" aria-pressed="${s.id === examId}">${esc(s.short)}</button>`).join("")}
-        </div>
-        <div class="hero-ctas">
+        <div class="hero-ctas" style="margin-top:28px">
           <a class="btn btn-primary btn-lg" id="heroMainCta" href="#/hub/${examId}">
             ${icon("play", 16)}
             <span>Practise ${esc(spec.short)}</span>
@@ -622,6 +670,12 @@ export function renderHome(view) {
             ${icon("bolt", 16)}
             <span>Quick Drills</span>
           </a>
+        </div>
+      </div>
+      <div class="hero-action-box">
+        <div id="lvHost">${livingVisualHtml(lvScene)}</div>
+        <div class="exam-switch hero-exams" role="group" aria-label="Your active exam">
+          ${EXAM_SPECS.map((s) => `<button type="button" data-exam="${s.id}" aria-pressed="${s.id === examId}">${esc(s.short)}</button>`).join("")}
         </div>
       </div>
     </div>
@@ -717,6 +771,7 @@ export function renderHome(view) {
         ${icon("arrowRight", 15)}
         <span>${esc(step.ctaLabel)}</span>
       </a>
+      <span class="ns-pal" aria-hidden="true"><piix-pal pal="lurk" hue="42" scale="3"></piix-pal></span>
     </div>
   </section>
 
@@ -812,9 +867,36 @@ export function renderHome(view) {
     btn.addEventListener("click", () => examState.set(btn.dataset.exam));
   });
 
+  /* Living visual subtle rotation over time & dot click */
+  const lvHost = view.querySelector("#lvHost");
+  let curLv = lvScene;
+  const wireLvDots = () => {
+    if (!lvHost) return;
+    lvHost.querySelectorAll("[data-lv]").forEach((dot) => {
+      dot.addEventListener("click", () => {
+        curLv = parseInt(dot.dataset.lv, 10) || 0;
+        lvVisitIdx = curLv;
+        lvHost.innerHTML = livingVisualHtml(curLv);
+        wireLvDots();
+      });
+    });
+  };
+  wireLvDots();
+  const lvReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!lvReduced && lvHost) {
+    const lvTimer = setInterval(() => {
+      if (!document.body.contains(lvHost)) { clearInterval(lvTimer); return; }
+      curLv = (curLv + 1) % 3;
+      lvVisitIdx = curLv;
+      lvHost.innerHTML = livingVisualHtml(curLv);
+      wireLvDots();
+    }, 10000);
+  }
+
   /* Delight layer */
   injectPal("bitbug");
   injectPal("pip");
+  injectPal("lurk");
   injectPal("moss");
   registerMunshi();
 }
