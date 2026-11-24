@@ -348,11 +348,11 @@ button {
 }
 
 .readout-value .unit {
-  font-size: 0.42em;
+  font-size: 0.45em;
   font-weight: 550;
   color: var(--ink-3);
   letter-spacing: 0.04em;
-  margin-left: 3px;
+  margin-left: 5px;
 }
 
 .empty-note {

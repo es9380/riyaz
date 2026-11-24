@@ -65,15 +65,19 @@ body {
 /* Today strip -> bento tiles */
 .today-strip { border: 0; gap: 12px; margin-top: 18px; }
 .today-cell {
-  background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 84%, transparent); border: 1px solid var(--line); border-radius: var(--radius-lg);
   backdrop-filter: blur(6px); transition: transform .25s var(--ease), border-color .25s;
 }
 .today-cell + .today-cell { border-left: 1px solid var(--line); }
-.today-cell:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.today-cell:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
 .readout-value, .big, .dh-wpm, .dh-acc { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em; }
-@media (max-width: 720px) {
-  .today-cell, .today-cell.wide { grid-column: span 12; }
-  .today-cell + .today-cell { border-left: 1px solid var(--line); }
+@media (max-width: 900px) {
+  .today-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .today-cell.wide { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  .today-strip { grid-template-columns: 1fr; }
+  .today-cell, .today-cell.wide { grid-column: span 1; }
 }
 
 /* Exam rows -> tactile tiles */
@@ -104,17 +108,12 @@ body {
 .nc-opt { border-radius: var(--radius); transition: transform var(--dur) var(--ease), border-color var(--dur); }
 .nc-opt:hover { transform: translateX(3px); }
 
-/* Motion: page entrance + scroll reveal, only where supported */
+/* Motion: snappy page entrance without hiding filtered rows */
 @media (prefers-reduced-motion: no-preference) {
-  .view-enter > * { animation: rise .55s var(--ease) both; }
-  .view-enter > *:nth-child(2) { animation-delay: .06s; }
-  .view-enter > *:nth-child(3) { animation-delay: .12s; }
-  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-  @supports (animation-timeline: view()) {
-    .exam-row, .today-cell, .mock-row, .hist-row {
-      animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 35%;
-    }
-  }
+  .view-enter > * { animation: rise .24s var(--ease) both; }
+  .view-enter > *:nth-child(2) { animation-delay: .03s; }
+  .view-enter > *:nth-child(3) { animation-delay: .06s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
 
 /* Footer */
@@ -126,20 +125,23 @@ body {
 @media (max-width: 720px) {
   /* The header's backdrop-filter makes it the containing block for fixed
      descendants, which pinned the bottom nav to the header box instead of
-     the viewport (QA v3, item 4). On mobile the header goes nearly opaque
-     and drops the blur; the nav keeps its own glass. */
-  .site-header { backdrop-filter: none; -webkit-backdrop-filter: none; background: color-mix(in srgb, var(--bg) 92%, transparent); }
+     the viewport (QA v3, item 4). On mobile the header uses a solid ground
+     so scrolled page content never bleeds through behind it. */
+  .site-header { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--bg); }
   .header-in { gap: 12px; }
   .header-in .theme-toggle { margin-left: auto; }
   .main-nav {
-    position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 95;
-    justify-content: space-between; overflow-x: auto; padding: 5px;
-    background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    position: fixed; left: 8px; right: 8px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 95;
+    display: flex; justify-content: space-between; gap: 2px; overflow: hidden; padding: 4px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow);
   }
-  .main-nav a { padding: 9px 11px; font-size: .8rem; white-space: nowrap; }
+  .main-nav a {
+    flex: 1 1 auto; text-align: center;
+    padding: 8px 5px; font-size: .72rem; letter-spacing: -0.01em; white-space: nowrap;
+  }
   body:has(#view.view-stage) .main-nav { display: none; }
-  .site-footer { padding-bottom: 76px; }
+  .site-footer { padding-bottom: 84px; }
   .exam-row { padding: 20px 16px 20px 58px; }
   .exam-row::before { left: 14px; }
 }

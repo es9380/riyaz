@@ -7,11 +7,7 @@ import { EXAM_SPECS, specOf } from "../data/examSpecs.js";
 import { examState, go } from "../app.js";
 import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
-
-const esc = (s) =>
-  String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
+import { esc } from "../core/util.js";
 
 const CIRC = 2 * Math.PI * 26;
 
@@ -670,25 +666,32 @@ export function renderHome(view) {
   }
 
   /* Daily goal: inline change, saved through the store. */
-  const goalBtn = view.querySelector("#goalChange");
-  if (goalBtn) {
+  function wireGoalEdit() {
+    const goalBtn = view.querySelector("#goalChange");
+    if (!goalBtn) return;
     goalBtn.addEventListener("click", () => {
+      const currentGoal = Math.max(1, store.goal() || 2);
       const wrap = view.querySelector("#goalEditWrap");
-      wrap.innerHTML = `<span style="display:inline-flex;gap:6px;align-items:center">
-        <input id="goalInput" type="number" min="1" max="10" value="${goal}"
-          aria-label="Daily goal, tests per day"
-          style="width:58px;padding:4px 8px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)" />
-        <button class="link-btn" id="goalSave" type="button">Save goal</button></span>`;
+      wrap.innerHTML = `<span class="goal-edit-inline">
+        <input id="goalInput" type="number" min="1" max="10" value="${currentGoal}"
+          aria-label="Daily goal, tests per day" />
+        <button class="link-btn" id="goalSave" type="button">Save</button>
+        <button class="link-btn link-muted" id="goalCancel" type="button">Cancel</button></span>`;
       const input = wrap.querySelector("#goalInput");
       input.focus();
       input.select();
-      wrap.querySelector("#goalSave").addEventListener("click", () => {
+
+      const closeEdit = () => {
+        wrap.innerHTML = `<button class="link-btn" id="goalChange" type="button">Change goal</button>`;
+        wireGoalEdit();
+      };
+
+      const saveGoal = () => {
         store.setGoal(parseInt(input.value, 10));
         /* Show the EFFECTIVE stored goal, never the raw typed value: the
            store's valid range is 1–10, so display and storage must be read
            back from the store to guarantee they can never disagree. */
         const effective = store.goal();
-        input.value = String(effective);
         view.querySelector("#goalMax").textContent = String(effective);
         const ring = view.querySelector(".dual-goal .mini-ring");
         if (ring) {
@@ -696,11 +699,18 @@ export function renderHome(view) {
           const fg = ring.querySelector(".ring-fg");
           if (fg) fg.setAttribute("stroke-dashoffset", (CIRC * (1 - Math.min(1, todayCount / effective))).toFixed(1));
         }
-        wrap.innerHTML = `<button class="link-btn" id="goalChange2" type="button">Change goal</button>`;
-        wrap.querySelector("#goalChange2").addEventListener("click", () => renderHome(view));
+        closeEdit();
+      };
+
+      wrap.querySelector("#goalSave").addEventListener("click", saveGoal);
+      wrap.querySelector("#goalCancel").addEventListener("click", closeEdit);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); saveGoal(); }
+        else if (e.key === "Escape") { e.preventDefault(); closeEdit(); }
       });
     });
   }
+  wireGoalEdit();
 
   /* Exam switcher: readiness + next step follow the pick. */
   view.querySelectorAll("[data-exam]").forEach((btn) => {
