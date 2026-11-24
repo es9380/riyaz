@@ -1,0 +1,153 @@
+/* Riyaz — stage-adjacent shared styles.
+   The typing stage itself (core/engine.js) injects its own `.ts-*` styles
+   and consumes this design system through CSS variables (see the aliases
+   in tokens.css: --muted, --error, --font-sheet, plus --ink, --line,
+   --surface, --accent, --ok, --sheet-bg, --sheet-ink, --header-h).
+   What lives here: the shared caret keyframes (hero demo), result-screen
+   primitives reused by the NCRTC review, and table/comparison styles. */
+
+@keyframes caret-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+/* ——— Result primitives (shared: NCRTC review, stored-result detail) ——— */
+
+.result-head {
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+}
+
+.result-title {
+  font-size: var(--fs-h1);
+}
+
+.verdict {
+  margin-top: 10px;
+  font-size: 1.05rem;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.verdict strong {
+  color: var(--ink);
+}
+
+.verdict.pass strong:first-child {
+  color: var(--ok);
+}
+
+.verdict.fail strong:first-child {
+  color: var(--bad);
+}
+
+.result-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 26px 44px;
+  padding: 6px 0 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.calc-table,
+.mistake-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+
+.calc-table td,
+.mistake-table td,
+.mistake-table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.calc-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mistake-table th {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 650;
+}
+
+.mistake-table .got {
+  color: var(--bad);
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  word-break: break-word;
+}
+
+/* Passage comparison tokens */
+.compare {
+  font-family: var(--font-serif);
+  font-size: 1.06rem;
+  line-height: 1.9;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  background: var(--bg-raise);
+}
+
+.compare .tok {
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.compare .tok-ok {
+  color: var(--ink);
+}
+
+.compare .tok-bad {
+  color: var(--bad);
+  background: var(--bad-dim);
+  text-decoration: underline dotted;
+}
+
+.compare .tok-half {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.cloud-note {
+  color: var(--ink-3);
+  font-size: var(--fs-small);
+  margin-top: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-caret {
+    animation: none;
+    opacity: 1;
+  }
+}

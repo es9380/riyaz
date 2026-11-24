@@ -1,0 +1,93 @@
+/* Riyaz — design tokens. (Plan: DESIGN.md)
+   The daily register: midnight-ink dark, answer-sheet light. One accent —
+   Answer Green — spent only on actions, progress and success. Serif lives
+   on the paper sheet only. */
+
+:root {
+  --header-h: 60px;
+  --page-max: 1060px;
+  --stage-max: 880px;
+
+  --font-display: "Archivo", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+  --fs-hero: clamp(2.6rem, 6.4vw, 4.4rem);
+  --fs-h1: clamp(1.9rem, 4vw, 2.7rem);
+  --fs-h2: 1.35rem;
+  --fs-h3: 1.05rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-micro: 0.72rem;
+  --fs-readout: clamp(1.9rem, 4.5vw, 2.6rem);
+
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --ease: cubic-bezier(0.22, 0.9, 0.3, 1);
+  --dur: 160ms;
+
+  /* Aliases consumed by core/engine.js's injected stage styles — mapping
+     the engine's variable names onto this design system. */
+  --muted: var(--ink-2);
+  --error: var(--bad);
+  --font-sheet: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  /* Green that stays legible ON the paper sheet (both themes). */
+  --sheet-accent: #0b7a55;
+}
+
+/* ——— Dark: Midnight Ink ——— */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --bg-raise: #0f1830;
+  --surface: #121e36;
+  --surface-2: #1a2a4a;
+  --ink: #eaf0f9;
+  --ink-2: #9caecb;
+  --ink-3: #64779a;
+  --line: rgba(234, 240, 249, 0.1);
+  --line-strong: rgba(234, 240, 249, 0.22);
+  --accent: #2fbf8f;
+  --accent-strong: #45d6a5;
+  --accent-ink: #06231a;
+  --accent-dim: rgba(47, 191, 143, 0.14);
+  --ok: #2fbf8f;
+  --bad: #f2767b;
+  --bad-dim: rgba(242, 118, 123, 0.13);
+  --sheet-bg: #fdfcf7;
+  --sheet-ink: #182238;
+  --sheet-line: #d9dee8;
+  --shadow: 0 16px 40px rgba(2, 6, 16, 0.55);
+  --shadow-soft: 0 4px 18px rgba(2, 6, 16, 0.4);
+  --focus-ring: #45d6a5;
+}
+
+/* ——— Light: Answer-Sheet White ——— */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f8f5;
+  --bg-raise: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #edf2ee;
+  --ink: #152238;
+  --ink-2: #4e617a;
+  --ink-3: #8494ab;
+  --line: rgba(21, 34, 56, 0.13);
+  --line-strong: rgba(21, 34, 56, 0.27);
+  --accent: #0b7a55;
+  --accent-strong: #095f43;
+  --accent-ink: #ffffff;
+  --accent-dim: rgba(11, 122, 85, 0.1);
+  --ok: #0b7a55;
+  --bad: #c23b47;
+  --bad-dim: rgba(194, 59, 71, 0.09);
+  --sheet-bg: #ffffff;
+  --sheet-ink: #152238;
+  --sheet-line: #d9dee8;
+  --shadow: 0 16px 36px rgba(21, 34, 56, 0.14);
+  --shadow-soft: 0 4px 16px rgba(21, 34, 56, 0.09);
+  --focus-ring: #0b7a55;
+}
