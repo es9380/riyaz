@@ -130,3 +130,8 @@ NCRTC runner, Arena or Studio — the stage is sacred (Principle 1) — and
 their scripts load lazily, only from Home and from the Progress empty
 state. They respect `prefers-reduced-motion`, pause off-screen, and never
 intercept a click meant for the interface.
+
+## Riyaz Next (v3 visual pass)
+Palette moved to "night desk": ink-indigo ground (#0A0B17), saffron action colour (#FFB020 dark / #D97706 light),
+success #3DDC97, error #FF6B7A. Fonts: Bricolage Grotesque (display), Hanken Grotesk (UI), Source Serif 4 (sheet only).
+All changes are presentation-only: tokens.css, riyaz-next.css (loaded last), index.html shell. core/*, features/*, app.js untouched.
