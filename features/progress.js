@@ -2,7 +2,7 @@
 
 import * as store from "../core/store.js";
 import { specOf } from "../data/examSpecs.js";
-import { esc, fmtDate } from "../core/util.js";
+import { esc, fmtDate, icon } from "../core/util.js";
 
 /* ——— Delight layer: Piixpal (self-hosted, vendor/piixpal/) ———
    Lurk peeks over the empty state, and only the empty state: this
@@ -104,15 +104,13 @@ export function renderProgress(view) {
     view.innerHTML = `
     <section class="page-head">
       <h1>Progress</h1>
-      <p class="lede">Every test you finish lands here — speed, accuracy, the mistakes that
-        cost you, and whether you cleared the bar.</p>
+      <p class="lede">Your speed, accuracy, and exam verdicts on this device.</p>
     </section>
-    <div class="empty-note" style="margin-top:26px">
-      <p><strong>Nothing here yet.</strong></p>
-      <p>Finish one mock and this page starts keeping score for you.</p>
+    <div class="empty-note" style="margin-top:24px">
+      <p><strong>Nothing recorded yet.</strong> Finish a mock or drill to start your history.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <a class="btn btn-primary" href="#/arena">Take your first mock</a>
-        <label class="btn" for="importBackupEmpty">Import backup</label>
+        <a class="btn btn-primary" href="#/arena">${icon("play", 15)} <span>Go to Exams</span></a>
+        <label class="btn" for="importBackupEmpty">${icon("upload", 15)} <span>Import Backup</span></label>
         <input id="importBackupEmpty" type="file" accept="application/json,.json" hidden />
       </div>
       <p class="hint" id="importEmptyMsg" role="status"></p>
@@ -140,7 +138,7 @@ export function renderProgress(view) {
   view.innerHTML = `
   <section class="page-head">
     <h1>Progress</h1>
-    <p class="lede">Every finished test, newest first. Filter by exam, inspect your trend, or select any row to reopen its full breakdown.</p>
+    <p class="lede">Your speed trend, accuracy, and saved breakdowns.</p>
   </section>
 
   <div class="mock-tools" style="margin-top:18px">
@@ -151,11 +149,11 @@ export function renderProgress(view) {
         ["chsl", "CHSL"],
         ["cgl", "CGL"],
         ["rrb", "RRB"],
-        ["practice", "Practice"],
+        ["practice", "Drills"],
         ["custom", "Custom"],
       ].map(([id, lbl]) => `<button type="button" data-hfilter="${id}" aria-pressed="${id === "all"}">${lbl}</button>`).join("")}
     </div>
-    <input class="search-input" id="histSearch" type="search" placeholder="Search test name…" aria-label="Search history" />
+    <input class="search-input" id="histSearch" type="search" placeholder="Search test…" aria-label="Search history" />
   </div>
 
   <div id="histSummary"></div>
@@ -164,11 +162,11 @@ export function renderProgress(view) {
   <div class="hist-list" id="histList" role="list" aria-label="Test history"></div>
 
   <div class="progress-footer-actions">
-    <button class="btn" id="exportBackup" type="button">Export backup (.json)</button>
-    <label class="btn" for="importBackup">Import backup</label>
+    <button class="btn" id="exportBackup" type="button">${icon("download", 15)} <span>Export Backup</span></button>
+    <label class="btn" for="importBackup">${icon("upload", 15)} <span>Import Backup</span></label>
     <input id="importBackup" type="file" accept="application/json,.json" hidden />
     <span style="flex:1"></span>
-    <button class="btn btn-quiet" id="clearHist" type="button">Clear all history</button>
+    <button class="btn btn-quiet" id="clearHist" type="button">${icon("trash", 15)} <span>Clear History</span></button>
   </div>
   <p class="hint" id="backupStatus" role="status" style="margin-top:8px;color:var(--ink-2);font-size:var(--fs-small)"></p>`;
 
@@ -271,11 +269,10 @@ export function renderProgress(view) {
 
     summaryHost.innerHTML = `
     <div class="hub-spec" role="list" aria-label="Your totals">
-      <div class="readout" role="listitem"><span class="readout-value num">${rows.length}</span><span class="label">Tests shown</span></div>
-      <div class="readout" role="listitem"><span class="readout-value num">${Math.floor(totalSec / 60)}<span class="unit">min typing</span></span><span class="label">Practice time</span></div>
-      <div class="readout" role="listitem"><span class="readout-value num">${avgNet}<span class="unit">WPM</span></span><span class="label">Avg net · last ${last10.length}</span></div>
-      <div class="readout" role="listitem"><span class="readout-value num">${avgAcc}<span class="unit">%</span></span><span class="label">Avg accuracy · last ${last10.length}</span></div>
-      <div class="readout" role="listitem"><span class="readout-value num">${bestNet}<span class="unit">WPM</span></span><span class="label">Best net</span></div>
+      <div class="readout" role="listitem"><span class="tile-kicker">${icon("check", 13)} Tests</span><span class="readout-value num">${rows.length}</span></div>
+      <div class="readout" role="listitem"><span class="tile-kicker">${icon("clock", 13)} Time</span><span class="readout-value num">${Math.floor(totalSec / 60)}<span class="unit">min</span></span></div>
+      <div class="readout" role="listitem"><span class="tile-kicker">${icon("chart", 13)} Avg Speed</span><span class="readout-value num">${avgNet}<span class="unit">WPM</span></span><span class="label">${avgAcc}% acc</span></div>
+      <div class="readout" role="listitem"><span class="tile-kicker">${icon("trophy", 13)} Best Net</span><span class="readout-value num">${bestNet}<span class="unit">WPM</span></span></div>
     </div>`;
 
     const spec = (filter === "hcm" || filter === "chsl" || filter === "rrb") ? specOf(filter) : null;

@@ -790,6 +790,127 @@
   color: var(--accent-ink);
 }
 
+.hub-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.hub-drawers {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.info-drawer {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raise);
+  overflow: hidden;
+}
+
+.info-drawer summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 13px 18px;
+  font-weight: 600;
+  font-size: var(--fs-small);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+
+.info-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+.info-drawer summary svg {
+  color: var(--accent);
+}
+
+.info-drawer summary::after {
+  content: "+";
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.info-drawer[open] summary::after {
+  content: "−";
+}
+
+.drawer-body {
+  padding: 2px 18px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.drawer-note {
+  color: var(--ink-3);
+  font-size: var(--fs-small);
+  margin-top: 12px;
+}
+
+.faq-compact {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.faq-row .faq-q {
+  font-weight: 600;
+  font-size: var(--fs-small);
+  color: var(--ink);
+}
+
+.faq-row .faq-a {
+  font-size: var(--fs-small);
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.rev-card {
+  margin-top: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raise);
+  padding: 18px 20px;
+}
+
+.studio-mastery {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raise);
+  padding: 14px 18px;
+}
+
+.studio-mastery .sm-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.studio-mastery .label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.studio-mastery .label svg {
+  color: var(--ok);
+}
+
+.mock-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* ——— Hub ——— */
 
 .hub-spec {

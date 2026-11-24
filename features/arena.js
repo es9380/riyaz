@@ -5,7 +5,7 @@ import { EXAM_SPECS, specOf } from "../data/examSpecs.js";
 import { COUNTS } from "../data/counts.js";
 import { examState, launchStage } from "../app.js";
 import * as store from "../core/store.js";
-import { esc } from "../core/util.js";
+import { esc, icon } from "../core/util.js";
 
 function bestEntry(testId) {
   try {
@@ -17,10 +17,11 @@ function bestEntry(testId) {
 }
 
 function examSummary(hist, examId) {
-  const mine = hist.filter((h) => (h.examId || "hcm") === examId && h.mode === "mock");
-  const passed = mine.filter((h) => h.qualified).length;
+  const mine = hist.filter((h) => (examId === "hcm" ? (!h.examId || h.examId === "hcm") : h.examId === examId) && h.mode === "mock");
+  const triedIds = new Set(mine.map((h) => h.testId).filter(Boolean));
+  const passedIds = new Set(mine.filter((h) => h.qualified).map((h) => h.testId).filter(Boolean));
   const best = mine.length ? Math.max(...mine.map((h) => Math.round(h.net || 0))) : null;
-  return { done: mine.length, passed, best };
+  return { done: mine.length, tried: triedIds.size, passed: passedIds.size, best };
 }
 
 /* ——— Arena index ——— */
@@ -29,36 +30,42 @@ export function renderArena(view) {
   const hist = store.history();
   view.innerHTML = `
   <section class="page-head">
-    <h1>Exam Arena</h1>
-    <p class="lede">Four exams, four different rulebooks. Every mock below runs the real
-      duration, the real mistake rules and the real qualifying bar for its exam —
-      nothing is borrowed from a neighbour.</p>
+    <h1>Exams</h1>
+    <p class="lede">Pick an exam for real-rule mocks, or paste your own text below.</p>
   </section>
 
-  <div class="exam-rows" style="margin-top:22px">
+  <div class="exam-rows" style="margin-top:20px">
     ${EXAM_SPECS.map((s) => {
       const sum = examSummary(hist, s.id);
-      const prog = sum.done ? ` · ${sum.done} attempted${sum.best != null ? ` (best ${sum.best} WPM)` : ""}` : "";
+      const total = COUNTS.mocks[s.id] || 0;
+      const pct = total ? Math.round((sum.tried / total) * 100) : 0;
       return `
       <a class="exam-row" href="#/hub/${s.id}">
         <span>
           <span class="er-name">${esc(s.name)}</span>
           <span class="er-meta" style="display:block">${esc(s.posts)}</span>
-          <span class="er-meta" style="display:block">${esc(s.durationLabel)} · ${esc(s.targetLabel)} · ${esc(s.nature)}${prog}</span>
+          <span class="er-chips">
+            <span class="chip">${icon("clock", 12)} ${s.durationMin} min</span>
+            <span class="chip">${icon("target", 12)} ${s.targetWPM ? `${s.targetWPM} WPM` : "Complete text"}</span>
+            <span class="chip">${s.backspace ? "Backspace On" : "Backspace Off"}</span>
+            ${sum.best != null ? `<span class="chip chip-ok">${icon("trophy", 12)} Best ${sum.best} WPM</span>` : ""}
+            ${sum.passed ? `<span class="chip chip-ok">${icon("check", 12)} ${sum.passed} passed</span>` : ""}
+          </span>
         </span>
         <span class="er-side">
-          <span class="er-count num">${COUNTS.mocks[s.id] || 0}</span>
-          <span class="label">Mocks</span>
+          <span class="er-count num">${sum.tried}<span class="er-total">/${total}</span></span>
+          <span class="mini-meter er-meter" aria-hidden="true"><i class="fill-accent" style="width:${pct}%"></i></span>
+          <span class="label">Mocks done</span>
         </span>
       </a>`;
     }).join("")}
   </div>
 
   <section class="section" aria-labelledby="customH">
-    <div class="section-head"><h2 id="customH">Build your own test</h2></div>
-    <p style="color:var(--ink-2);max-width:62ch">Paste any passage — a newspaper editorial, a PIB
-      release, your own notes — pick an exam's rules and a duration, and it runs as a full
-      mock with that exam's scoring.</p>
+    <div class="section-head">
+      <h2 id="customH">${icon("keyboard", 18)} Custom Text Test</h2>
+      <span class="aside">Practise with any article or notes</span>
+    </div>
     <div id="customBuilder"></div>
   </section>`;
 
@@ -74,22 +81,22 @@ function mountCustomBuilder(root) {
   <form class="builder" id="customForm" novalidate>
     <div class="field">
       <div class="field-top">
-        <label for="ctText">Your passage</label>
+        <label for="ctText">Passage text</label>
         <button class="link-btn link-muted" id="ctClear" type="button" hidden>Clear text</button>
       </div>
-      <textarea id="ctText" name="passage" rows="7" spellcheck="false"
-        placeholder="Paste or type the passage you want to practise…"></textarea>
-      <span class="hint num" id="ctCount">0 words · 0 keystrokes — aim for 150+ words for a meaningful test.</span>
+      <textarea id="ctText" name="passage" rows="6" spellcheck="false"
+        placeholder="Paste or type any English passage (minimum 10 words)…"></textarea>
+      <span class="hint num" id="ctCount">0 words · 0 keystrokes</span>
     </div>
     <div class="builder-grid">
       <div class="field">
-        <label for="ctExam">Score it as</label>
+        <label for="ctExam">Exam rules</label>
         <select id="ctExam" name="exam">
           ${EXAM_SPECS.map((s) => `<option value="${s.id}"${s.id === activeExam ? " selected" : ""}>${esc(s.short)}</option>`).join("")}
         </select>
       </div>
       <div class="field">
-        <label for="ctDur">Duration (minutes)</label>
+        <label for="ctDur">Minutes</label>
         <div class="dur-row">
           <input id="ctDur" name="duration" type="number" min="1" max="30" value="10" inputmode="numeric" />
           <div class="dur-presets" role="group" aria-label="Duration presets">
@@ -98,12 +105,12 @@ function mountCustomBuilder(root) {
         </div>
       </div>
       <div class="field">
-        <label for="ctTitle">Name it</label>
+        <label for="ctTitle">Test name</label>
         <input id="ctTitle" name="title" type="text" value="Custom test" autocomplete="off" />
       </div>
     </div>
     <div class="builder-foot">
-      <button class="btn btn-primary" type="submit">Start custom test</button>
+      <button class="btn btn-primary" type="submit">${icon("play", 15)} <span>Start Custom Test</span></button>
       <span class="wc" id="ctRuleNote"></span>
     </div>
   </form>`;
@@ -128,10 +135,10 @@ function mountCustomBuilder(root) {
     const clean = text.value.replace(/\s+/g, " ").trim();
     const w = words();
     clearBtn.hidden = !clean.length;
-    count.textContent = `${w} word${w === 1 ? "" : "s"} · ${clean.length.toLocaleString("en-IN")} keystrokes${w && w < 40 ? " — quite short; the test will end when the text does" : ""}`;
+    count.textContent = `${w} word${w === 1 ? "" : "s"} · ${clean.length.toLocaleString("en-IN")} keystrokes`;
     const s = specOf(exam.value);
     ruleNote.textContent = s
-      ? `${s.short} rules · backspace ${s.backspace ? "allowed" : "off by default"} · ${s.errorAllowance}`
+      ? `${s.short} · Backspace ${s.backspace ? "On" : "Off"} · ${s.errorAllowance}`
       : "";
   }
 
@@ -156,7 +163,7 @@ function mountCustomBuilder(root) {
     e.preventDefault();
     const clean = text.value.replace(/\s+/g, " ").trim();
     if (words() < 10) {
-      count.textContent = "Add a little more text — at least 10 words — so the test can score properly.";
+      count.textContent = "Need at least 10 words to score properly.";
       text.focus();
       return;
     }
@@ -179,51 +186,71 @@ function mountCustomBuilder(root) {
 export async function renderHub(view, examId) {
   const spec = specOf(examId);
   if (!spec) {
-    view.innerHTML = `<div class="empty-note"><p><strong>That exam does not exist here.</strong></p>
-      <a class="btn" href="#/arena">Back to Exam Arena</a></div>`;
+    view.innerHTML = `<div class="empty-note"><p><strong>Exam not found.</strong></p>
+      <a class="btn" href="#/arena">Back to Exams</a></div>`;
     return;
   }
   const hist = store.history();
   const sum = examSummary(hist, examId);
+  const totalMocks = COUNTS.mocks[examId] || 0;
+  const passLabel = spec.targetWPM ? `${spec.targetWPM} WPM` : (spec.categories ? `≤${spec.categories[0].cap}% err` : "Pass");
 
   view.innerHTML = `
   <section class="page-head">
     <div class="hub-head-top">
       <div>
-        <p class="label" style="margin-bottom:8px">${esc(spec.body)}</p>
+        <p class="label" style="margin-bottom:6px">${esc(spec.body)}</p>
         <h1>${esc(spec.name)}</h1>
+        <p class="lede">${esc(spec.posts)}</p>
       </div>
-      <button class="btn btn-primary" id="hubQuickStart" type="button" disabled>Loading mocks…</button>
+      <div class="hub-ctas">
+        <button class="btn btn-primary" id="hubQuickStart" type="button" disabled>${icon("play", 15)} <span>Loading…</span></button>
+        <button class="btn" id="hubRandomStart" type="button" disabled>${icon("shuffle", 15)} <span>Random</span></button>
+      </div>
     </div>
-    <p class="lede">${esc(spec.posts)} — ${esc(spec.nature)}. ${esc(spec.errorAllowance)}.</p>
   </section>
 
   <div class="hub-spec" role="list" aria-label="Exam facts">
-    <div class="readout" role="listitem"><span class="readout-value num">${spec.durationMin}<span class="unit">min</span></span><span class="label">Duration</span></div>
-    <div class="readout" role="listitem"><span class="readout-value num">${spec.targetWPM || "—"}${spec.targetWPM ? '<span class="unit">WPM</span>' : ""}</span><span class="label">Target (net)</span></div>
-    <div class="readout" role="listitem"><span class="readout-value num">${COUNTS.mocks[examId] || 0}</span><span class="label">Mocks</span></div>
-    <div class="readout" role="listitem"><span class="readout-value num">${sum.done}</span><span class="label">Attempted</span></div>
-    <div class="readout" role="listitem"><span class="readout-value" style="font-size:1.25rem;padding-top:8px">${spec.backspace ? "On" : "Off"}<span class="unit">default</span></span><span class="label">Backspace</span></div>
+    <div class="readout" role="listitem">
+      <span class="tile-kicker">${icon("clock", 13)} Time</span>
+      <span class="readout-value num">${spec.durationMin}<span class="unit">min</span></span>
+    </div>
+    <div class="readout" role="listitem">
+      <span class="tile-kicker">${icon("target", 13)} Pass Bar</span>
+      <span class="readout-value num" style="font-size:clamp(1.4rem,3vw,1.9rem)">${esc(passLabel)}</span>
+    </div>
+    <div class="readout" role="listitem">
+      <span class="tile-kicker">${icon("keyboard", 13)} Backspace</span>
+      <span class="readout-value" style="font-size:1.5rem">${spec.backspace ? "On" : "Off"}</span>
+    </div>
+    <div class="readout" role="listitem">
+      <span class="tile-kicker">${icon("trophy", 13)} Your Progress</span>
+      <span class="readout-value num">${sum.tried}<span class="er-total">/${totalMocks}</span></span>
+      <span class="label">${sum.best != null ? `Best ${sum.best} WPM` : "Not started"}</span>
+    </div>
   </div>
 
-  ${Array.isArray(spec.formula) && spec.formula.length ? `
-  <section aria-labelledby="howH">
-    <h2 id="howH" style="font-size:var(--fs-h3);margin-top:24px">How this exam is scored</h2>
-    <ul class="formula-list">${spec.formula.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
-    ${spec.pibNote ? `<p style="color:var(--ink-3);font-size:var(--fs-small);margin-top:12px">${esc(spec.pibNote)}</p>` : ""}
-  </section>` : ""}
-
-  ${Array.isArray(spec.faq) && spec.faq.length ? `
-  <section aria-labelledby="faqH" style="margin-top:20px">
-    <h2 id="faqH" style="font-size:var(--fs-h3);margin-bottom:10px">Common questions</h2>
-    <div class="faq-list">
-      ${spec.faq.map(([q, a]) => `
-      <details class="faq-item">
-        <summary>${esc(q)}</summary>
-        <p>${esc(a)}</p>
-      </details>`).join("")}
-    </div>
-  </section>` : ""}
+  <div class="hub-drawers">
+    ${Array.isArray(spec.formula) && spec.formula.length ? `
+    <details class="info-drawer">
+      <summary>${icon("book", 15)} <span>Scoring Rules</span></summary>
+      <div class="drawer-body">
+        <ul class="formula-list">${spec.formula.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+        ${spec.pibNote ? `<p class="drawer-note">${esc(spec.pibNote)}</p>` : ""}
+      </div>
+    </details>` : ""}
+    ${Array.isArray(spec.faq) && spec.faq.length ? `
+    <details class="info-drawer">
+      <summary>${icon("alert", 15)} <span>Common Questions (${spec.faq.length})</span></summary>
+      <div class="drawer-body faq-compact">
+        ${spec.faq.map(([q, a]) => `
+        <div class="faq-row">
+          <p class="faq-q">${esc(q)}</p>
+          <p class="faq-a">${esc(a)}</p>
+        </div>`).join("")}
+      </div>
+    </details>` : ""}
+  </div>
 
   <div class="mock-tools">
     <div class="seg" role="group" aria-label="Filter by difficulty" id="diffSeg">
@@ -232,8 +259,8 @@ export async function renderHub(view, examId) {
     <div class="seg" role="group" aria-label="Filter by status" id="statusSeg">
       ${[["all", "All"], ["untried", "Untried"], ["tried", "Tried"]].map(([id, lbl]) => `<button type="button" data-status="${id}" aria-pressed="${id === "all"}">${lbl}</button>`).join("")}
     </div>
-    <input class="search-input" id="mockSearch" type="search" placeholder="Search topic or number…" aria-label="Search mocks" />
-    <span class="count-note" id="mockCount" aria-live="polite">Loading mocks…</span>
+    <input class="search-input" id="mockSearch" type="search" placeholder="Search topic or #…" aria-label="Search mocks" />
+    <span class="count-note" id="mockCount" aria-live="polite">Loading…</span>
   </div>
   <div class="mock-list" id="mockList"></div>`;
 
@@ -243,6 +270,7 @@ export async function renderHub(view, examId) {
   const countEl = view.querySelector("#mockCount");
   const searchEl = view.querySelector("#mockSearch");
   const quickBtn = view.querySelector("#hubQuickStart");
+  const randBtn = view.querySelector("#hubRandomStart");
   if (!listEl) return;
 
   let diffFilter = "all";
@@ -259,13 +287,20 @@ export async function renderHub(view, examId) {
     testId: t.id,
   });
 
-  const nextUntried = tests.find((t) => !bestEntry(t.id)) || tests[0];
+  const untriedPool = tests.filter((t) => !bestEntry(t.id));
+  const nextUntried = untriedPool[0] || tests[0];
   if (quickBtn && nextUntried) {
     quickBtn.disabled = false;
-    quickBtn.textContent = tests.some((t) => !bestEntry(t.id))
-      ? `Start next untried (#${nextUntried.num})`
-      : `Practice #${nextUntried.num}`;
+    quickBtn.innerHTML = `${icon("play", 15)} <span>${untriedPool.length ? `Next Untried (#${nextUntried.num})` : `Retake #${nextUntried.num}`}</span>`;
     quickBtn.addEventListener("click", () => startMock(nextUntried));
+  }
+  if (randBtn && tests.length) {
+    randBtn.disabled = false;
+    randBtn.addEventListener("click", () => {
+      const pool = untriedPool.length ? untriedPool : tests;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      if (pick) startMock(pick);
+    });
   }
 
   function paint() {
@@ -281,13 +316,13 @@ export async function renderHub(view, examId) {
       }
       return true;
     });
-    countEl.textContent = `${rows.length} of ${tests.length} mocks`;
+    countEl.textContent = `${rows.length} of ${tests.length}`;
     listEl.innerHTML = rows.map((t) => {
       const best = bestEntry(t.id);
       const wc = t.text.split(/\s+/).filter(Boolean).length;
       const tickHtml = best && best.qualified === true ? ' <span class="tick" aria-label="Qualified">✓</span>' : "";
       const bestSub = best
-        ? `${best.acc != null ? `${Number(best.acc).toFixed(0)}% acc · ` : ""}${best.qualified === true ? "Qualified" : best.qualified === false ? "Below bar" : "Best net"}`
+        ? `${best.acc != null ? `${Number(best.acc).toFixed(0)}% acc · ` : ""}${best.qualified === true ? "Qualified" : best.qualified === false ? "Below bar" : "Best"}`
         : "Not tried";
       return `
       <button type="button" class="mock-row" data-tid="${esc(t.id)}">
@@ -300,9 +335,9 @@ export async function renderHub(view, examId) {
           ? `<span class="mb-net num">${Math.round(best.net)}${tickHtml}</span><span class="mb-label" style="display:block">${bestSub}</span>`
           : `<span class="mb-label">Not tried</span>`}</span>
         <span class="chip chip-${esc(t.diff)}">${esc(t.diff)}</span>
-        <span class="mock-go">Start</span>
+        <span class="mock-go">${icon("play", 13)} Start</span>
       </button>`;
-    }).join("") || `<div class="empty-note"><p>No matching mocks found.</p></div>`;
+    }).join("") || `<div class="empty-note"><p>No matching mocks.</p></div>`;
 
     listEl.querySelectorAll("[data-tid]").forEach((row) => {
       row.addEventListener("click", () => {

@@ -4,7 +4,7 @@
 import { launchStage } from "../app.js";
 import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
-import { esc } from "../core/util.js";
+import { esc, icon } from "../core/util.js";
 
 function weakWordCounts(hist) {
   const map = {};
@@ -72,38 +72,38 @@ export async function renderStudio(view) {
 
   view.innerHTML = `
   <section class="page-head">
-    <h1>Training Studio</h1>
-    <p class="lede">Short, deliberate practice: warm-ups to loosen the fingers, drills that
-      isolate one weakness at a time, and a revision set built from the words your own
-      results say you miss.</p>
+    <h1>Drills &amp; Warm-ups</h1>
+    <p class="lede">Master keys, weak words, punctuation, and exam vocabulary.</p>
   </section>
 
-  <section class="section" aria-labelledby="revH" style="margin-top:30px">
-    <div class="section-head"><h2 id="revH">Your revision set</h2></div>
+  <section class="section" aria-labelledby="revH" style="margin-top:24px">
+    <div class="section-head">
+      <h2 id="revH">${icon("bolt", 18)} Practise Your Mistakes</h2>
+      ${revWords.length ? `<span class="aside">${revWords.length} weak word${revWords.length === 1 ? "" : "s"} queued</span>` : ""}
+    </div>
     ${revWords.length ? `
-      <p style="color:var(--ink-2);max-width:62ch">Built from your last ${Math.min(12, hist.length)} results.
-        These are the words that have actually cost you marks — not a generic list.</p>
-      <div class="word-chips" aria-label="Weak words in your revision set" style="margin-top:12px">
-        ${revWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}
-      </div>
-      ${weakKeys.length ? `<div class="weak-keys" aria-label="Your weakest keys">
-        ${weakKeys.map((k) => `<span class="key-chip">${esc(k.key === " " ? "space" : k.key)}${k.count != null ? `<b>×${k.count}</b>` : ""}</span>`).join("")}
-      </div>` : ""}
-      <div class="rev-actions">
-        <div class="seg" role="group" aria-label="Revision duration" id="revDurSeg">
-          ${[3, 5, 10].map((m) => `<button type="button" data-revdur="${m}" aria-pressed="${m === 5}">${m} min</button>`).join("")}
+      <div class="rev-card">
+        <div class="word-chips" aria-label="Weak words in your revision set">
+          ${revWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}
         </div>
-        <button class="btn btn-primary" id="revStart" type="button">Start revision — ${revWords.length} weak word${revWords.length === 1 ? "" : "s"}</button>
+        ${weakKeys.length ? `<div class="weak-keys" aria-label="Your weakest keys">
+          ${weakKeys.map((k) => `<span class="key-chip">${esc(k.key === " " ? "space" : k.key)}${k.count != null ? `<b>×${k.count}</b>` : ""}</span>`).join("")}
+        </div>` : ""}
+        <div class="rev-actions">
+          <div class="seg" role="group" aria-label="Revision duration" id="revDurSeg">
+            ${[3, 5, 10].map((m) => `<button type="button" data-revdur="${m}" aria-pressed="${m === 5}">${m}m</button>`).join("")}
+          </div>
+          <button class="btn btn-primary" id="revStart" type="button">${icon("play", 15)} <span>Practise ${revWords.length} Weak Word${revWords.length === 1 ? "" : "s"}</span></button>
+        </div>
       </div>`
     : `
       <div class="empty-note">
-        <p><strong>No revision set yet.</strong></p>
-        <p>Take any mock first — the words you miss there become this set automatically.</p>
-        <a class="btn" href="#/arena">Open Exam Arena</a>
+        <p><strong>No missed words yet.</strong> Finish any mock and your weak words appear here automatically.</p>
+        <a class="btn" href="#/arena">${icon("target", 15)} <span>Go to Exams</span></a>
       </div>`}
   </section>
 
-  <div id="studioBody"><p style="color:var(--ink-3);margin-top:34px">Loading warm-ups and drills…</p></div>`;
+  <div id="studioBody"><p style="color:var(--ink-3);margin-top:34px">Loading drills…</p></div>`;
 
   let revDur = 5;
   view.querySelectorAll("#revDurSeg [data-revdur]").forEach((btn) => {
@@ -145,16 +145,24 @@ export async function renderStudio(view) {
     (n, p) => n + p.items.filter((d) => bestByTest[d.id]?.mastered).length,
     0,
   );
+  const masteryPct = totalDrills ? Math.round((masteredCount / totalDrills) * 100) : 0;
 
   body.innerHTML = `
-  <div class="mock-tools" style="margin-top:36px">
+  <div class="studio-mastery">
+    <div class="sm-top">
+      <span class="label">${icon("trophy", 13)} Drill Mastery (≥98% accuracy)</span>
+      <span class="num"><strong>${masteredCount}</strong> / ${totalDrills}</span>
+    </div>
+    <div class="mini-meter" aria-hidden="true"><i class="fill-ok" style="width:${masteryPct}%"></i></div>
+  </div>
+  <div class="mock-tools" style="margin-top:20px">
     <div class="seg" role="group" aria-label="Filter studio sections" id="studioSecSeg">
       <button type="button" data-sec="all" aria-pressed="true">All</button>
       <button type="button" data-sec="warmups" aria-pressed="false">Warm-ups (${WARMUPS.length})</button>
-      <button type="button" data-sec="drills" aria-pressed="false">Drills (${totalDrills})</button>
+      <button type="button" data-sec="vocab" aria-pressed="false">Vocabulary</button>
+      <button type="button" data-sec="drills" aria-pressed="false">All Drills (${totalDrills})</button>
     </div>
-    <input class="search-input" id="studioSearch" type="search" placeholder="Filter warm-ups or drills…" aria-label="Filter warm-ups or drills" />
-    <span class="count-note num" id="studioStatsNote">${masteredCount} of ${totalDrills} drills mastered (≥98% acc)</span>
+    <input class="search-input" id="studioSearch" type="search" placeholder="Search drills or vocab…" aria-label="Filter warm-ups or drills" />
   </div>
   <div id="studioList"></div>`;
 
@@ -176,7 +184,8 @@ export async function renderStudio(view) {
   function paintStudio() {
     const q = query.trim().toLowerCase();
     const showWarmups = sectionFilter === "all" || sectionFilter === "warmups";
-    const showDrills = sectionFilter === "all" || sectionFilter === "drills";
+    const showDrills = sectionFilter === "all" || sectionFilter === "drills" || sectionFilter === "vocab";
+    const vocabIndex = DRILLS.findIndex((p) => /vocab/i.test(p.part));
 
     let wuHtml = "";
     if (showWarmups) {
@@ -193,8 +202,8 @@ export async function renderStudio(view) {
         wuHtml = `
         <section class="section" aria-labelledby="wuH">
           <div class="section-head">
-            <h2 id="wuH">Warm-ups</h2>
-            <span class="aside">15-minute sets, or one short subset at a time</span>
+            <h2 id="wuH">${icon("flame", 18)} Warm-ups</h2>
+            <span class="aside">15-min full sets or 5-min subsets</span>
           </div>
           ${filteredSets.map(({ set, subs }) => `
           <div class="set-block">
@@ -203,7 +212,7 @@ export async function renderStudio(view) {
               <span class="chip chip-${esc(set.level)}">${esc(set.level)}</span>
               ${scoreBadge(set.id)}
               <span class="set-desc">${esc(set.desc || "")}</span>
-              <button class="btn" type="button" data-set="${esc(set.id)}">Full set · 15 min</button>
+              <button class="btn" type="button" data-set="${esc(set.id)}">${icon("play", 13)} Full · 15m</button>
             </div>
             ${subs.length ? `<div class="subset-rows">
               ${subs.map((sub) => `
@@ -214,7 +223,7 @@ export async function renderStudio(view) {
                 </span>
                 <span style="display:flex;gap:10px;align-items:center">
                   ${scoreBadge(sub.id)}
-                  <span class="mock-go">Start</span>
+                  <span class="mock-go">${icon("play", 13)} Start</span>
                 </span>
               </button>`).join("")}
             </div>` : ""}
@@ -225,8 +234,9 @@ export async function renderStudio(view) {
 
     let drillHtml = "";
     if (showDrills) {
+      const activePart = sectionFilter === "vocab" && vocabIndex >= 0 ? String(vocabIndex) : drillPartFilter;
       const filteredParts = DRILLS.map((part, idx) => {
-        if (drillPartFilter !== "all" && String(idx) !== drillPartFilter) return null;
+        if (activePart !== "all" && String(idx) !== activePart) return null;
         const partMatches = !q || part.part.toLowerCase().includes(q);
         const items = part.items.filter((d) =>
           !q || partMatches || `${d.name} ${d.desc || ""}`.toLowerCase().includes(q)
@@ -235,7 +245,7 @@ export async function renderStudio(view) {
         return { part: part.part, items };
       }).filter(Boolean);
 
-      const partTabs = `
+      const partTabs = sectionFilter === "vocab" ? "" : `
       <div class="part-chips" role="group" aria-label="Drill parts" id="drillPartSeg">
         <button type="button" class="chip-btn" data-part="all" aria-pressed="${drillPartFilter === "all"}">All parts</button>
         ${DRILLS.map((p, idx) => {
@@ -244,11 +254,12 @@ export async function renderStudio(view) {
         }).join("")}
       </div>`;
 
+      const shownCount = filteredParts.reduce((n, p) => n + p.items.length, 0);
       drillHtml = `
       <section class="section" aria-labelledby="drillH">
         <div class="section-head">
-          <h2 id="drillH">Drills</h2>
-          <span class="aside">${totalDrills} drills in ${DRILLS.length} parts</span>
+          <h2 id="drillH">${icon("keyboard", 18)} ${sectionFilter === "vocab" ? "Vocabulary Drills" : "Skill Drills"}</h2>
+          <span class="aside">${shownCount} drill${shownCount === 1 ? "" : "s"} · 5 min each</span>
         </div>
         ${partTabs}
         ${filteredParts.length ? filteredParts.map((part) => `
@@ -264,15 +275,15 @@ export async function renderStudio(view) {
               <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
                 ${scoreBadge(d.id)}
                 ${DIFF && DIFF[d.id] ? `<span class="chip chip-${esc(DIFF[d.id])}">${esc(DIFF[d.id])}</span>` : ""}
-                <span class="mock-go">Start</span>
+                <span class="mock-go">${icon("play", 13)} Start</span>
               </span>
             </button>`).join("")}
           </div>
-        </div>`).join("") : `<div class="empty-note" style="margin-top:16px"><p>No matching drills found.</p></div>`}
+        </div>`).join("") : `<div class="empty-note" style="margin-top:16px"><p>No matching drills.</p></div>`}
       </section>`;
     }
 
-    listHost.innerHTML = (wuHtml + drillHtml) || `<div class="empty-note" style="margin-top:20px"><p>No matching warm-ups or drills found.</p></div>`;
+    listHost.innerHTML = (wuHtml + drillHtml) || `<div class="empty-note" style="margin-top:20px"><p>No matching items.</p></div>`;
 
     listHost.querySelectorAll("#drillPartSeg [data-part]").forEach((btn) => {
       btn.addEventListener("click", () => {
