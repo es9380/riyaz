@@ -198,6 +198,7 @@ function mountDemo(root) {
   const hintEl = root.querySelector(".demo-hint");
   const wpmEl = root.querySelector(".dh-wpm");
   const accEl = root.querySelector(".dh-acc");
+  const nextBtn = root.querySelector("#demoNextBtn");
   if (!body || !lineEl) return;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -205,8 +206,20 @@ function mountDemo(root) {
   let lineIdx = 0;
   let typed = []; /* {ch, ok} per position */
   let keys = 0, errKeys = 0, startedAt = performance.now();
+  let cumChars = 0, cumKeys = 0, cumErrs = 0, sessionStart = performance.now();
   let mode = "auto"; /* auto | user */
   let timer = null, idleTimer = null, alive = true;
+
+  function syncNextBtn() {
+    if (!nextBtn) return;
+    const lineDone = mode === "user" && typed.length >= target.length;
+    nextBtn.hidden = !lineDone;
+    if (lineDone && hintEl) {
+      hintEl.textContent = "Line complete — click Next line or press Enter to keep typing.";
+    } else if (mode === "user" && hintEl) {
+      hintEl.textContent = "Type the line. Click away to resume the demo.";
+    }
+  }
 
   function render() {
     let html = "";
@@ -232,11 +245,17 @@ function mountDemo(root) {
     });
     if (typed.length >= target.length) html += `<span class="demo-caret" aria-hidden="true"></span>`;
     lineEl.innerHTML = html;
-    const mins = Math.max((performance.now() - startedAt) / 60000, 0.05);
-    const wpm = Math.round(typed.length / 5 / mins);
-    const acc = keys ? Math.max(0, Math.round((1 - errKeys / keys) * 100)) : 100;
-    if (wpmEl) wpmEl.textContent = mode === "auto" || typed.length ? String(Math.min(wpm, 68)) : "0";
+
+    const totalTyped = mode === "user" ? (cumChars + typed.length) : typed.length;
+    const totalKeys = mode === "user" ? (cumKeys + keys) : keys;
+    const totalErr = mode === "user" ? (cumErrs + errKeys) : errKeys;
+    const t0 = mode === "user" ? sessionStart : startedAt;
+    const mins = Math.max((performance.now() - t0) / 60000, 0.05);
+    const wpm = Math.round(totalTyped / 5 / mins);
+    const acc = totalKeys ? Math.max(0, Math.round((1 - totalErr / totalKeys) * 100)) : 100;
+    if (wpmEl) wpmEl.textContent = mode === "auto" || totalTyped ? String(Math.min(wpm, 95)) : "0";
     if (accEl) accEl.textContent = `${acc}%`;
+    syncNextBtn();
   }
 
   function stopTimers() {
@@ -244,7 +263,15 @@ function mountDemo(root) {
     if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
   }
 
-  function nextLine() {
+  function nextLine(keepCumulative = false) {
+    if (keepCumulative) {
+      cumChars += typed.length;
+      cumKeys += keys;
+      cumErrs += errKeys;
+    } else {
+      cumChars = 0; cumKeys = 0; cumErrs = 0;
+      sessionStart = performance.now();
+    }
     lineIdx = (lineIdx + 1) % DEMO_LINES.length;
     target = DEMO_LINES[lineIdx];
     typed = [];
@@ -253,11 +280,18 @@ function mountDemo(root) {
     render();
   }
 
+  function advanceUserLine() {
+    if (mode !== "user") return;
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+    nextLine(true);
+    body.focus({ preventScroll: true });
+  }
+
   function autoStep() {
     if (!alive || mode !== "auto") return;
     if (!document.body.contains(body)) { alive = false; return; }
     if (typed.length >= target.length) {
-      timer = setTimeout(() => { nextLine(); autoStep(); }, 1500);
+      timer = setTimeout(() => { nextLine(false); autoStep(); }, 1500);
       return;
     }
     const want = target[typed.length];
@@ -291,10 +325,12 @@ function mountDemo(root) {
     stopTimers();
     typed = [];
     keys = 0; errKeys = 0;
+    cumChars = 0; cumKeys = 0; cumErrs = 0;
     startedAt = performance.now();
+    sessionStart = startedAt;
     render();
     if (stateEl) stateEl.textContent = "Your turn";
-    if (hintEl) hintEl.textContent = "Type the line. Click away and it resumes the demo on its own.";
+    if (hintEl) hintEl.textContent = "Type the line. Click away to resume the demo.";
     body.focus({ preventScroll: true });
   }
 
@@ -302,19 +338,31 @@ function mountDemo(root) {
     if (mode === "auto") return;
     mode = "auto";
     if (stateEl) stateEl.textContent = "Live demo";
-    if (hintEl) hintEl.textContent = "Click the demo and type it yourself — it hands control back after 12 idle seconds.";
-    nextLine();
+    if (hintEl) hintEl.textContent = "Click the paper and type — hands control back after 12s idle.";
+    nextLine(false);
     autoStep();
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("mousedown", (e) => e.preventDefault());
+    nextBtn.addEventListener("click", advanceUserLine);
   }
 
   body.addEventListener("click", takeOver);
   body.addEventListener("focus", takeOver);
-  body.addEventListener("blur", () => {
+  body.addEventListener("blur", (e) => {
+    if (nextBtn && e.relatedTarget === nextBtn) return;
     stopTimers();
     idleTimer = setTimeout(resume, 12000);
   });
   body.addEventListener("keydown", (e) => {
+    if (e.key === " ") e.preventDefault();
     if (mode !== "user") return;
+    if (e.key === "Enter" && typed.length >= target.length) {
+      e.preventDefault();
+      advanceUserLine();
+      return;
+    }
     if (e.key === "Backspace") {
       e.preventDefault();
       typed.pop();
@@ -596,6 +644,7 @@ export function renderHome(view) {
       <div class="sheet-foot">
         <span class="demo-state"><span class="pulse" aria-hidden="true"></span><span class="demo-state-text">Live demo</span></span>
         <span class="demo-hint">Click the paper and type — hands control back after 12s idle.</span>
+        <button class="demo-next-btn" id="demoNextBtn" type="button" hidden>Next line →</button>
         <span class="demo-hud" aria-hidden="true">
           <span class="dh"><span>Speed</span><b class="dh-wpm num">0</b><span class="dh-u">WPM</span></span>
           <span class="dh"><span>Accuracy</span><b class="dh-acc num">100%</b></span>

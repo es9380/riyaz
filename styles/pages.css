@@ -348,6 +348,27 @@
   min-width: 200px;
 }
 
+.demo-next-btn {
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--sheet-accent);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--sheet-accent) 30%, transparent);
+  transition: transform 0.14s var(--ease), opacity 0.14s ease;
+}
+
+.demo-next-btn:hover {
+  transform: translateY(-1px);
+}
+
+.demo-next-btn[hidden] {
+  display: none;
+}
+
 .demo-hud {
   display: flex;
   gap: 10px;
