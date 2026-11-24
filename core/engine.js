@@ -42,18 +42,19 @@ const ENGINE_CSS = `
 .ts-stage{--ts-fs:19px;--ts-lh:1.85;max-width:1060px;margin:0 auto;padding:18px 20px 64px;color:var(--ink,#E8E6DF);font-family:var(--font-ui,system-ui,-apple-system,"Segoe UI",sans-serif)}
 .ts-stage *{box-sizing:border-box}
 .ts-stage.ts-exam-live{margin-top:52px}
-.ts-bar{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 12px;border-bottom:1px solid var(--line,#2A2C33)}
-.ts-bar .ts-title{font-family:var(--font-display,system-ui,sans-serif);font-size:17px;font-weight:600;letter-spacing:.01em;margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ts-btn{appearance:none;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--surface,#15171C);color:var(--ink,#E8E6DF);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;line-height:1.2;transition:border-color .16s ease,background-color .16s ease,color .16s ease}
+.ts-bar{position:relative;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0 10px;border-bottom:1px solid var(--line,#2A2C33)}
+.ts-bar .ts-title{font-family:var(--font-display,system-ui,sans-serif);font-size:15px;font-weight:700;letter-spacing:.01em;margin-right:auto;min-width:80px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-btn{appearance:none;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--surface,#15171C);color:var(--ink,#E8E6DF);border-radius:999px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer;line-height:1.2;transition:border-color .16s ease,background-color .16s ease,color .16s ease,transform .16s ease}
 .ts-btn:hover{border-color:var(--accent,#F59E0B)}
+.ts-btn:active{transform:scale(.97)}
 .ts-btn:focus-visible,.ts-pill-btn:focus-visible{outline:2px solid var(--accent,#F59E0B);outline-offset:2px}
 .ts-btn.on{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414);border-color:var(--accent,#F59E0B);font-weight:600}
-.ts-btn.primary{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414);border-color:var(--accent,#F59E0B);font-weight:700;padding:8px 20px}
+.ts-btn.primary{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414);border-color:var(--accent,#F59E0B);font-weight:700;padding:7px 16px}
 .ts-btn:disabled{opacity:.45;cursor:default}
 .ts-group{display:inline-flex;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:999px;overflow:hidden}
-.ts-group .ts-btn{border:0;border-radius:0;padding:7px 11px}
+.ts-group .ts-btn{border:0;border-radius:0;padding:6px 9px}
 .ts-group .ts-btn + .ts-btn{border-left:1px solid var(--line-strong,var(--line,#2A2C33))}
-.ts-bar-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9A978C);margin:0 2px 0 8px}
+.ts-bar-label{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted,#9A978C);margin:0 1px 0 4px}
 .ts-pop{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:var(--surface,#15171C);border:1px solid var(--line,#2A2C33);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.35);padding:12px 14px;min-width:230px}
 .ts-pop[hidden]{display:none}
 .ts-pop label{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:13.5px;padding:5px 0;cursor:pointer}
@@ -100,28 +101,68 @@ const ENGINE_CSS = `
 .ts-timer-pill.danger .tp-fill{background:var(--error,#F87171)}
 body.ts-zen header,body.ts-zen nav{opacity:.06;transition:opacity .3s ease}
 header,nav{transition:opacity .3s ease}
-.ts-result{margin-top:18px}
-.ts-verdict{padding:2px 0}
-.ts-verdict h2{margin:0 0 4px;font-family:var(--font-display,"Space Grotesk",system-ui,sans-serif);font-size:21px}
-.ts-verdict p{margin:0;color:var(--muted,#9A978C);font-size:14px}
-.ts-stamp{display:inline-block;font-family:var(--font-display,"Space Grotesk",system-ui,sans-serif);font-size:15px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border:2px solid currentColor;outline:1px solid currentColor;outline-offset:2px;border-radius:3px;padding:5px 10px;transform:rotate(-2deg);white-space:nowrap}
-.ts-stamp.good{color:var(--ok,#4ADE80)}
-.ts-stamp.bad{color:var(--error,#F87171)}
-.ts-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:1px;background:var(--line,#2A2C33);border:1px solid var(--line,#2A2C33);border-radius:12px;overflow:hidden;margin-top:14px}
+.ts-result{margin-top:20px;animation:ts-rise .35s cubic-bezier(.22,.9,.3,1) both}
+@keyframes ts-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes ts-stamp-in{0%{opacity:0;transform:scale(1.35) rotate(-6deg)}65%{opacity:1;transform:scale(.96) rotate(-2deg)}100%{opacity:1;transform:scale(1) rotate(-2deg)}}
+@keyframes ts-spark{0%{opacity:0;transform:translateY(10px) scale(.6)}35%{opacity:1}100%{opacity:0;transform:translateY(-28px) scale(1.15)}}
+.ts-verdict-hero{position:relative;overflow:hidden;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:20px;padding:24px 26px;background:var(--surface,#15171C);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 24px}
+.ts-verdict-hero.pass{border-color:color-mix(in srgb,var(--ok,#3ddc97) 55%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--ok,#3ddc97) 18%,transparent),transparent 70%),var(--surface,#15171C)}
+.ts-verdict-hero.fail{border-color:color-mix(in srgb,var(--error,#ff6b7a) 45%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--error,#ff6b7a) 13%,transparent),transparent 70%),var(--surface,#15171C)}
+.ts-verdict-hero.prac{border-color:color-mix(in srgb,var(--accent,#ffb020) 45%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--accent,#ffb020) 15%,transparent),transparent 70%),var(--surface,#15171C)}
+.ts-vh-main{display:grid;gap:8px;min-width:220px;flex:1}
+.ts-vh-badges{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ts-stamp{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-display,system-ui,sans-serif);font-size:17px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border:2.5px solid currentColor;outline:1.5px solid currentColor;outline-offset:2px;border-radius:4px;padding:6px 13px;transform:rotate(-2deg);white-space:nowrap;animation:ts-stamp-in .45s cubic-bezier(.22,.9,.3,1) both}
+.ts-stamp.good{color:var(--ok,#3ddc97)}
+.ts-stamp.bad{color:var(--error,#ff6b7a)}
+.ts-stamp.prac{color:var(--accent,#ffb020)}
+.ts-best-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:var(--accent-dim,rgba(255,176,32,.15));color:var(--accent,#ffb020);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.ts-vh-sub{margin:0;font-size:15.5px;font-weight:550;color:var(--ink,#f1f2fb);max-width:56ch}
+.ts-vh-meta{margin:0;font-size:13px;color:var(--muted,#a5a9c9)}
+.ts-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ts-confetti i{position:absolute;width:7px;height:7px;border-radius:2px;opacity:0;animation:ts-spark 1.8s ease-out var(--d,0s) 1 both}
+.ts-hero-row{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;margin-top:14px}
+.ts-kpi-card{border:1px solid var(--line,#2A2C33);border-radius:16px;background:var(--surface,#15171C);padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ts-kpi-big{font-family:var(--font-display,system-ui,sans-serif);font-size:clamp(2.3rem,5vw,3.1rem);font-weight:800;line-height:1;letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+.ts-kpi-unit{font-size:.38em;font-weight:600;color:var(--muted,#9A978C);margin-left:4px;letter-spacing:.04em}
+.ts-kpi-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#9A978C);font-weight:700;margin-bottom:4px}
+.ts-kpi-note{font-size:13px;color:var(--muted,#9A978C);margin-top:6px}
+.ts-acc-ring{width:76px;height:76px;flex:none;transform:rotate(-90deg)}
+.ts-acc-ring .bg{fill:none;stroke:var(--line,#2A2C33);stroke-width:7}
+.ts-acc-ring .fg{fill:none;stroke:var(--ok,#3ddc97);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .7s ease}
+.ts-acc-ring.warn .fg{stroke:var(--accent,#ffb020)}
+.ts-acc-ring.bad .fg{stroke:var(--error,#ff6b7a)}
+.ts-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line,#2A2C33);border:1px solid var(--line,#2A2C33);border-radius:14px;overflow:hidden;margin-top:14px}
 .ts-tile{background:var(--surface,#15171C);padding:14px 16px}
-.ts-tile .v{font-size:25px;font-weight:650;font-variant-numeric:tabular-nums}
-.ts-tile .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted,#9A978C);margin-top:2px}
-.ts-card{border:1px solid var(--line,#2A2C33);border-radius:12px;background:var(--surface,#15171C);padding:16px 18px;margin-top:14px}
-.ts-card h3{margin:0 0 10px;font-size:15px;font-family:var(--font-display,"Space Grotesk",system-ui,sans-serif)}
+.ts-tile .v{font-family:var(--font-display,system-ui,sans-serif);font-size:23px;font-weight:700;font-variant-numeric:tabular-nums}
+.ts-tile .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted,#9A978C);margin-top:3px}
+.ts-card{border:1px solid var(--line,#2A2C33);border-radius:14px;background:var(--surface,#15171C);padding:16px 18px;margin-top:14px;overflow-x:auto}
+.ts-card h3{margin:0 0 10px;font-size:15px;font-family:var(--font-display,system-ui,sans-serif)}
 .ts-card table{border-collapse:collapse;width:100%;font-size:13.5px}
-.ts-card td,.ts-card th{padding:6px 8px;border-bottom:1px solid var(--line,#2A2C33);text-align:left;vertical-align:top}
+.ts-card td,.ts-card th{padding:7px 8px;border-bottom:1px solid var(--line,#2A2C33);text-align:left;vertical-align:top}
 .ts-card tr:last-child td{border-bottom:0}
-.ts-card ol{margin:6px 0;padding-left:20px;font-size:13.5px;line-height:1.65}
+.ts-card ol{margin:8px 0 0;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--muted,#9A978C)}
 .ts-card .mono{font-variant-numeric:tabular-nums}
-.ts-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.ts-actions a.ts-btn{text-decoration:none;display:inline-block}
-@media (max-width:560px){.ts-stage{padding:14px 12px 56px}.ts-typebox{padding:18px 16px}.ts-sheet{padding:18px 18px 26px}.ts-capture{padding:18px 16px}}
-@media (prefers-reduced-motion: reduce){.ts-caret.on,.ts-ptcaret::before{animation:none}.ts-prog i{transition:none}}
+.ts-err-bars{display:grid;gap:10px}
+.ts-eb-row{display:grid;grid-template-columns:130px 1fr 36px;align-items:center;gap:10px;font-size:13px}
+.ts-eb-track{height:8px;border-radius:999px;background:var(--line,#2A2C33);overflow:hidden}
+.ts-eb-fill{display:block;height:100%;border-radius:999px;background:var(--error,#ff6b7a)}
+.ts-eb-num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.ts-pill-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:650;border:1px solid var(--line-strong,var(--line,#2A2C33));color:var(--muted,#9A978C)}
+.ts-pill-tag.ok{color:var(--ok,#3ddc97);border-color:color-mix(in srgb,var(--ok,#3ddc97) 45%,var(--line))}
+.ts-pill-tag.bad{color:var(--error,#ff6b7a);border-color:color-mix(in srgb,var(--error,#ff6b7a) 45%,var(--line))}
+.ts-calc-details summary{cursor:pointer;list-style:none;font-family:var(--font-display,system-ui,sans-serif);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;color:var(--ink,#E8E6DF)}
+.ts-calc-details summary::-webkit-details-marker{display:none}
+.ts-calc-details summary::after{content:"+";color:var(--accent,#ffb020);font-size:18px;font-weight:700}
+.ts-calc-details[open] summary::after{content:"−"}
+.ts-weak-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.ts-wchip{padding:4px 10px;border-radius:999px;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--bg-raise,#12142a);font-size:12.5px}
+.ts-wchip b{color:var(--error,#ff6b7a);margin-left:4px;font-variant-numeric:tabular-nums}
+.ts-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.ts-actions a.ts-btn{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.ts-actions button.ts-btn{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:680px){.ts-hero-row{grid-template-columns:1fr}.ts-verdict-hero{padding:18px 18px}}
+@media (max-width:560px){.ts-stage{padding:14px 12px 56px}.ts-typebox{padding:18px 16px}.ts-sheet{padding:18px 18px 26px}.ts-capture{padding:18px 16px}.ts-eb-row{grid-template-columns:104px 1fr 28px}}
+@media (prefers-reduced-motion: reduce){.ts-caret.on,.ts-ptcaret::before{animation:none}.ts-prog i,.ts-acc-ring .fg{transition:none}.ts-result,.ts-stamp,.ts-confetti i{animation:none;display:none}}
 .ts-printarea{display:none}
 @media print{body>*{display:none!important}body>.ts-printarea{display:block!important;color:#000;background:#fff;font-family:Georgia,serif;font-size:14pt;line-height:1.7;padding:24px;white-space:pre-wrap}}
 `;
@@ -245,7 +286,9 @@ class Stage {
     back.type = "button";
     back.addEventListener("click", () => this.leave());
     bar.appendChild(back);
-    bar.appendChild(h("span", "ts-title", this.title));
+    const titleEl = h("span", "ts-title", this.title);
+    titleEl.title = this.title;
+    bar.appendChild(titleEl);
 
     /* view toggle */
     const vg = h("span", "ts-group");
@@ -1124,7 +1167,10 @@ class Stage {
   leave() {
     this.destroy();
     if (current === this) current = null;
-    if (location.hash && location.hash !== "#/") location.hash = "#/";
+    if (this.mode === "mock" && this.examId) location.hash = `#/hub/${this.examId}`;
+    else if (this.mode === "drill" || this.mode === "warmup" || this.mode === "revision") location.hash = "#/studio";
+    else if (this.mode === "custom") location.hash = "#/arena";
+    else if (location.hash && location.hash !== "#/") location.hash = "#/";
     else this.view.innerHTML = "";
   }
 
@@ -1151,6 +1197,7 @@ class Stage {
     const elapsed = this.elapsedSec();
     const typed = this.typed;
     const durSec = Math.round(elapsed);
+    const prevBest = this.testId ? store.bestFor(this.testId) : null;
     let entry, resultHtml;
 
     if (this.family === "hcm") {
@@ -1165,6 +1212,7 @@ class Stage {
         errorPct: sc.words ? +(sc.errs / sc.words * 100).toFixed(1) : 0,
         verdict: sc.qualified ? "Qualified" : "Not qualified",
       };
+      this.isNewBest = entry.net > 0 && (!prevBest || entry.net > prevBest.net);
       resultHtml = this.isExam ? this.examResultHcm(sc, entry) : this.practiceResult(sc, entry);
     } else {
       const tgt = this.family === "e2" ? cycleTarget(this.baseText, typed.length) : this.baseText;
@@ -1185,6 +1233,7 @@ class Stage {
         finalMistakes: sc.finalMistakes, allowance: sc.allowance,
         breakdown: sc.breakdown, completion: sc.completion,
       };
+      this.isNewBest = entry.net > 0 && (!prevBest || entry.net > prevBest.net);
       resultHtml = this.examResultEx(sc, entry, verdict);
     }
 
@@ -1201,62 +1250,117 @@ class Stage {
     if (this.onDone) { try { this.onDone(stored); } catch (e) {} }
   }
 
+  confettiHtml() {
+    const spots = [
+      ["8%", "22%", "#3ddc97", "0.05s"], ["18%", "70%", "#ffb020", "0.15s"],
+      ["32%", "18%", "#ffc65c", "0.25s"], ["48%", "78%", "#3ddc97", "0.1s"],
+      ["64%", "24%", "#ffb020", "0.2s"], ["78%", "68%", "#3ddc97", "0.3s"],
+      ["90%", "30%", "#ffc65c", "0.12s"], ["26%", "55%", "#ff6b7a", "0.22s"],
+    ];
+    return '<div class="ts-confetti" aria-hidden="true">' + spots.map(([l, t, c, d]) =>
+      '<i style="left:' + l + ";top:" + t + ";background:" + c + ";--d:" + d + '"></i>'
+    ).join("") + "</div>";
+  }
+
+  heroStatsHtml(primaryVal, primaryUnit, primaryLabel, primaryNote, accPct) {
+    const clamped = Math.max(0, Math.min(100, Number(accPct) || 0));
+    const circ = 2 * Math.PI * 30;
+    const off = circ * (1 - clamped / 100);
+    const ringCls = clamped >= 95 ? "" : clamped >= 85 ? " warn" : " bad";
+    return '<div class="ts-hero-row">' +
+      '<div class="ts-kpi-card"><div>' +
+        '<div class="ts-kpi-lbl">' + esc(primaryLabel) + "</div>" +
+        '<div class="ts-kpi-big">' + esc(primaryVal) + '<span class="ts-kpi-unit">' + esc(primaryUnit) + "</span></div>" +
+        (primaryNote ? '<div class="ts-kpi-note">' + esc(primaryNote) + "</div>" : "") +
+      "</div></div>" +
+      '<div class="ts-kpi-card"><div>' +
+        '<div class="ts-kpi-lbl">Accuracy</div>' +
+        '<div class="ts-kpi-big">' + esc(clamped.toFixed ? Number(accPct).toFixed(1) : accPct) + '<span class="ts-kpi-unit">%</span></div>' +
+        '<div class="ts-kpi-note">' + (clamped >= 98 ? "Clean precision" : clamped >= 95 ? "Exam standard" : "Focus on accuracy") + "</div>" +
+      '</div><svg class="ts-acc-ring' + ringCls + '" viewBox="0 0 76 76" aria-hidden="true">' +
+        '<circle class="bg" cx="38" cy="38" r="30"/>' +
+        '<circle class="fg" cx="38" cy="38" r="30" stroke-dasharray="' + circ.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/>' +
+      "</svg></div></div>";
+  }
+
   tilesHtml(tiles) {
     return '<div class="ts-tiles">' + tiles.map(([v, l]) =>
       '<div class="ts-tile"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + "</div></div>").join("") + "</div>";
   }
 
-  actionsHtml() {
+  actionsHtml(errs) {
+    const backHref = this.mode === "mock" && this.examId ? "#/hub/" + esc(this.examId)
+      : (this.mode === "drill" || this.mode === "warmup" || this.mode === "revision") ? "#/studio"
+      : "#/arena";
+    const backLabel = this.mode === "mock" ? "More Mocks" : "More Practice";
     return '<div class="ts-actions">' +
-      '<button type="button" class="ts-btn primary" data-act="retake">Retake</button>' +
+      '<button type="button" class="ts-btn primary" data-act="retake">↻ Retake</button>' +
+      (errs > 0 && this.family === "hcm" ? '<a class="ts-btn" href="#/studio">⚡ Practise Weak Words</a>' : "") +
+      '<a class="ts-btn" href="' + backHref + '">' + esc(backLabel) + "</a>" +
       '<a class="ts-btn" href="#/progress">Progress</a>' +
       '<a class="ts-btn" href="#/">Home</a></div>';
   }
 
+  errBarsHtml(cats) {
+    if (!cats || !cats.length) return '<p style="margin:0;color:var(--ok,#3ddc97);font-size:13.5px;font-weight:600">No errors recorded.</p>';
+    const max = Math.max(1, ...cats.map(([, n]) => n));
+    return '<div class="ts-err-bars">' + cats.map(([k, n]) =>
+      '<div class="ts-eb-row"><span>' + esc(k) + '</span><span class="ts-eb-track"><span class="ts-eb-fill" style="width:' + Math.round((n / max) * 100) + '%"></span></span><span class="ts-eb-num">' + n + "</span></div>"
+    ).join("") + "</div>";
+  }
+
   mistakeRowsHtml(rows) {
-    if (!rows || !rows.length) return '<p style="margin:0;color:var(--muted,#9A978C);font-size:13.5px">No mistakes — a clean run.</p>';
+    if (!rows || !rows.length) return '<p style="margin:0;color:var(--ok,#3ddc97);font-size:13.5px;font-weight:600">✓ Spotless run — no mistakes.</p>';
     return "<table><tr><th>Passage</th><th>You typed</th><th>Kind</th></tr>" + rows.map((r) =>
-      "<tr><td>" + esc(r.exp || "—") + "</td><td>" + esc(r.got === "" ? "(skipped)" : r.got) + "</td><td>" +
-      esc(r.kind + (r.cat && r.cat !== r.kind ? " · " + r.cat : "")) + "</td></tr>").join("") + "</table>";
+      "<tr><td>" + esc(r.exp || "—") + '</td><td style="color:var(--error,#ff6b7a)">' + esc(r.got === "" ? "(skipped)" : r.got) + '</td><td><span class="ts-pill-tag">' +
+      esc(r.kind + (r.cat && r.cat !== r.kind ? " · " + r.cat : "")) + "</span></td></tr>").join("") + "</table>";
   }
 
   examResultHcm(sc, e) {
     const band = hcmBandLabel(e.net);
     const verdict = sc.qualified
-      ? "Qualified — " + e.marks + " of 25 marks (" + band + ")"
-      : "Not qualified — net speed " + e.net + " WPM is below the 30 WPM qualifying line";
+      ? e.marks + " of 25 marks · " + band
+      : "Net speed " + e.net + " WPM — 30 WPM needed to qualify";
     const cats = [["Spelling", sc.errCat.spelling], ["Capitalisation", sc.errCat.capital], ["Punctuation", sc.errCat.punct],
       ["Spacing", sc.errCat.spacing], ["Word skipped", sc.errCat.skipped], ["Extra word", sc.errCat.extra]]
       .filter(([, n]) => n > 0);
-    const catHtml = cats.length
-      ? "<table>" + cats.map(([k, n]) => "<tr><td>" + k + "</td><td class='mono'>" + n + "</td></tr>").join("") + "</table>"
-      : '<p style="margin:0;color:var(--muted,#9A978C);font-size:13.5px">No errors recorded.</p>';
     const weakK = Object.keys(sc.weakKeys).sort((a, b) => sc.weakKeys[b] - sc.weakKeys[a]).slice(0, 6);
     const weakW = Object.keys(sc.weakWords).sort((a, b) => sc.weakWords[b] - sc.weakWords[a]).slice(0, 6);
-    let html = '<div class="ts-verdict"><h2><span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' +
-      (sc.qualified ? "QUALIFIED" : "BELOW THE BAR") + '</span></h2><p>' + esc(verdict) + "</p></div>";
-    html += this.tilesHtml([[e.gross + "", "Gross WPM"], [e.net + "", "Net WPM"], [e.acc + "%", "Accuracy"],
-      [e.errs + "", "Mistakes"], [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time used"]]);
-    html += '<div class="ts-card"><h3>How this was calculated</h3><ol>' +
+    let html = '<div class="ts-verdict-hero ' + (sc.qualified ? "pass" : "fail") + '">' +
+      (sc.qualified ? this.confettiHtml() : "") +
+      '<div class="ts-vh-main">' +
+        '<div class="ts-vh-badges">' +
+          '<span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' + (sc.qualified ? "✓ QUALIFIED" : "BELOW THE BAR") + "</span>" +
+          (this.isNewBest ? '<span class="ts-best-pill">★ New Personal Best</span>' : "") +
+        "</div>" +
+        '<p class="ts-vh-sub">' + esc(verdict) + "</p>" +
+        '<p class="ts-vh-meta">' + esc(this.title) + " · " + fmtTime(e.durSec) + " used</p>" +
+      "</div></div>";
+    html += this.heroStatsHtml(e.net, "WPM net", "Net Speed", "Gross " + e.gross + " WPM · Target 30+ WPM", e.acc);
+    html += this.tilesHtml([
+      [e.marks + " / 25", "Marks"], [e.gross + "", "Gross WPM"], [e.errs + "", "Mistakes"],
+      [e.words + "", "Words typed"], [e.bs + "", "Backspaces"], [fmtTime(e.durSec), "Time used"],
+    ]);
+    html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
+    html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
+    if (weakK.length || weakW.length) {
+      html += '<div class="ts-card"><h3>Weak Spots</h3>' +
+        (weakK.length ? '<div class="ts-weak-chips">' + weakK.map((k) => '<span class="ts-wchip mono">' + esc(k === " " ? "Space" : k) + "<b>×" + sc.weakKeys[k] + "</b></span>").join("") + "</div>" : "") +
+        (weakW.length ? '<div class="ts-weak-chips">' + weakW.map((w) => '<span class="ts-wchip">' + esc(w) + "<b>×" + sc.weakWords[w] + "</b></span>").join("") + "</div>" : "") +
+      "</div>";
+    }
+    html += '<details class="ts-card ts-calc-details"><summary>Show exact score calculation</summary><ol>' +
       "<li>Words typed W = keystrokes ÷ 5 = " + e.chars + " ÷ 5 = <b>" + e.words + "</b></li>" +
       "<li>Gross speed = W ÷ minutes = <b>" + e.gross + " WPM</b></li>" +
       "<li>Mistakes M = <b>" + e.errs + "</b> (Delhi Police counts full mistakes only)</li>" +
       "<li>Accuracy = (W − M) ÷ W = <b>" + e.acc + "%</b></li>" +
-      "<li>Net speed = (W − 10 × M) ÷ minutes = <b>" + e.net + " WPM</b> → " + esc(band) + "</li></ol></div>";
-    html += '<div class="ts-card"><h3>Error breakdown</h3>' + catHtml + "</div>";
-    html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
-    if (weakK.length || weakW.length) {
-      html += '<div class="ts-card"><h3>Weak spots</h3><p style="margin:0;font-size:13.5px">' +
-        (weakK.length ? "Keys: " + weakK.map((k) => esc(k === " " ? "Space" : k) + " ×" + sc.weakKeys[k]).join(", ") + "<br>" : "") +
-        (weakW.length ? "Words: " + weakW.map((w) => esc(w) + " ×" + sc.weakWords[w]).join(", ") : "") + "</p></div>";
-    }
-    html += this.actionsHtml();
+      "<li>Net speed = (W − 10 × M) ÷ minutes = <b>" + e.net + " WPM</b> → " + esc(band) + "</li></ol></details>";
+    html += this.actionsHtml(e.errs);
     return html;
   }
 
   examResultEx(sc, e, verdict) {
     const isE2 = sc.engine === "E2";
-    const mins = Math.max(sc.mins || 0, 0.01);
     const calc = isE2 ? [
       "Words typed W = keystrokes ÷ 5 = " + sc.chars + " ÷ 5 = " + sc.words,
       "Mistakes M = full " + sc.full + " + ½ × half " + sc.half + " = " + sc.weighted,
@@ -1272,21 +1376,39 @@ class Stage {
       "Gross speed = W ÷ minutes = " + sc.grossR + " WPM — for SSC the net shown is the gross speed",
       sc.reason + ".",
     ];
-    let html = '<div class="ts-verdict"><h2><span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' +
-      (sc.qualified ? "QUALIFIED" : "BELOW THE BAR") + '</span></h2><p>' + esc(sc.reason) + ".</p></div>";
-    html += this.tilesHtml([[e.gross + "", "Gross WPM"], [e.net + "", "Net WPM"], [e.acc + "%", "Accuracy"],
-      [sc.weighted + "", "Mistakes (M)"], [e.errorPct + "%", "Error %"], [fmtTime(e.durSec), "Time used"]]);
-    html += '<div class="ts-card"><h3>How this was calculated</h3><ol>' + calc.map((c) => "<li>" + esc(c) + "</li>").join("") + "</ol></div>";
+    let html = '<div class="ts-verdict-hero ' + (sc.qualified ? "pass" : "fail") + '">' +
+      (sc.qualified ? this.confettiHtml() : "") +
+      '<div class="ts-vh-main">' +
+        '<div class="ts-vh-badges">' +
+          '<span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' + (sc.qualified ? "✓ QUALIFIED" : "BELOW THE BAR") + "</span>" +
+          (this.isNewBest ? '<span class="ts-best-pill">★ New Personal Best</span>' : "") +
+        "</div>" +
+        '<p class="ts-vh-sub">' + esc(sc.reason) + ".</p>" +
+        '<p class="ts-vh-meta">' + esc(this.title) + (e.category ? " · " + esc(e.category) : "") + " · " + fmtTime(e.durSec) + " used</p>" +
+      "</div></div>";
+    html += this.heroStatsHtml(
+      e.net,
+      isE2 ? "WPM net" : "WPM",
+      isE2 ? "Net Speed" : "Gross / Net Speed",
+      isE2 ? "Gross " + e.gross + " WPM · Target 30+ WPM" : "Error " + e.errorPct + "% (Cap " + sc.cap + "%)",
+      e.acc
+    );
+    html += this.tilesHtml([
+      [e.gross + "", "Gross WPM"], [sc.weighted + "", "Mistakes (M)"], [e.errorPct + "%", "Error %"],
+      [sc.full + " / " + sc.half, "Full / Half"], [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time used"],
+    ]);
     if (sc.dual) {
       html += '<div class="ts-card"><h3>Where you stand under both CGL standards</h3>' +
         sc.dual.map((row) => "<p style='margin:10px 0 4px;font-weight:600;font-size:13.5px'>" + esc(row.group) + "</p>" +
           "<table><tr><th>Category</th><th>Error cap</th><th>Your error %</th><th>Verdict</th></tr>" +
-          row.cells.map((c) => "<tr><td>" + esc(c.label) + "</td><td>" + c.cap + "%</td><td class='mono'>" + e.errorPct + "%</td><td>" +
-            (c.pass ? "Qualified" : "Not qualified") + "</td></tr>").join("") + "</table>").join("") + "</div>";
+          row.cells.map((c) => "<tr><td>" + esc(c.label) + "</td><td>" + c.cap + "%</td><td class='mono'>" + e.errorPct + '%</td><td><span class="ts-pill-tag ' + (c.pass ? "ok" : "bad") + '">' +
+            (c.pass ? "Qualified" : "Not qualified") + "</span></td></tr>").join("") + "</table>").join("") + "</div>";
     }
     const rows = (sc.mistakeDetail || []).map((d) => ({ exp: d.exp, got: d.got, kind: d.st, cat: "" }));
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(rows) + "</div>";
-    html += this.actionsHtml();
+    html += '<details class="ts-card ts-calc-details"><summary>Show exact score calculation</summary><ol>' +
+      calc.map((c) => "<li>" + esc(c) + "</li>").join("") + "</ol></details>";
+    html += this.actionsHtml(e.errs);
     return html;
   }
 
@@ -1297,22 +1419,35 @@ class Stage {
       .filter(([, n]) => n > 0);
     const top = cats.slice().sort((a, b) => b[1] - a[1])[0];
     let line;
-    if (e.errs === 0) line = "A clean run — no mistakes at all. Push the pace a little next time.";
-    else if (top && top[0] === "Word skipped") line = "Most losses came from skipped words — slow down at line turns and let your eyes lead your fingers.";
-    else if (top && top[0] === "Extra word") line = "Extra words crept in — trust the passage and keep your eyes one word ahead.";
-    else if (top) line = "Biggest leak: " + top[0].toLowerCase() + " (" + top[1] + "). A short drill on that one thing moves the score fastest.";
+    if (e.errs === 0) line = "Clean run — zero mistakes.";
+    else if (top && top[0] === "Word skipped") line = "Focus on line turns to prevent skipped words.";
+    else if (top && top[0] === "Extra word") line = "Keep eyes one word ahead to avoid extra words.";
+    else if (top) line = "Top focus area: " + top[0].toLowerCase() + " (" + top[1] + ").";
     else line = "Solid practice run.";
-    let gate = "";
-    if (this.mode === "drill") {
-      gate = accChar >= 98
-        ? '<p style="margin:8px 0 0;font-size:13.5px">Gate cleared — character accuracy ' + accChar.toFixed(1) + '% is at or above the 98% bar. This drill is yours.</p>'
-        : '<p style="margin:8px 0 0;font-size:13.5px">Gate: character accuracy ' + accChar.toFixed(1) + '% — the drill counts as mastered at 98%.</p>';
-    }
-    let html = '<div class="ts-verdict"><h2>' + e.net + ' WPM net</h2><p>' + esc(line) + "</p>" + gate + "</div>";
-    html += this.tilesHtml([[e.gross + "", "Gross WPM"], [e.net + "", "Net WPM"], [e.acc + "%", "Accuracy"],
-      [e.errs + "", "Mistakes"], [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time"]]);
+    const mastered = this.mode === "drill" && accChar >= 98;
+    const celebrate = mastered || e.errs === 0;
+    const stampText = mastered ? "✓ DRILL MASTERED" : e.errs === 0 ? "✓ CLEAN RUN" : e.net + " WPM NET";
+    const gateNote = this.mode === "drill"
+      ? " · Character accuracy " + accChar.toFixed(1) + "% (98% to master)"
+      : "";
+    let html = '<div class="ts-verdict-hero ' + (celebrate ? "pass" : "prac") + '">' +
+      (celebrate ? this.confettiHtml() : "") +
+      '<div class="ts-vh-main">' +
+        '<div class="ts-vh-badges">' +
+          '<span class="ts-stamp ' + (celebrate ? "good" : "prac") + '">' + esc(stampText) + "</span>" +
+          (this.isNewBest ? '<span class="ts-best-pill">★ New Personal Best</span>' : "") +
+        "</div>" +
+        '<p class="ts-vh-sub">' + esc(line) + esc(gateNote) + "</p>" +
+        '<p class="ts-vh-meta">' + esc(this.title) + " · " + fmtTime(e.durSec) + "</p>" +
+      "</div></div>";
+    html += this.heroStatsHtml(e.net, "WPM net", "Net Speed", "Gross " + e.gross + " WPM", e.acc);
+    html += this.tilesHtml([
+      [e.gross + "", "Gross WPM"], [e.errs + "", "Mistakes"],
+      [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time"],
+    ]);
+    if (cats.length) html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
-    html += this.actionsHtml();
+    html += this.actionsHtml(e.errs);
     return html;
   }
 }

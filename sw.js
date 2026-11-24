@@ -1,7 +1,7 @@
 /* Riyaz Service Worker — versioned cache, immediate takeover,
    network-first HTML shell, cache-first static assets. */
 
-const SITE_VERSION = "3.2.1";
+const SITE_VERSION = "3.4.1";
 const CACHE_NAME = `riyaz-v${SITE_VERSION}`;
 
 const SHELL_ASSETS = [
