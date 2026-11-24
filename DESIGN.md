@@ -107,3 +107,26 @@ stamp on a checked sheet. Nothing else in the product rotates or shouts.
   labels except functional ones (the timer's TIME LEFT, palette counts),
   no "→" CTA suffixes, no middle-dot meta strings as house style — meta
   information sits in ruled columns instead.
+
+## Delight layer (v2 addendum)
+
+One measured dose of life, added after v1: Piixpal pixel pals, self-hosted
+under `vendor/piixpal/` (MIT; see that folder's README). The register stays
+serious; the pals are small, hue-rotated into the palette (toward Answer
+Green), and confined to exactly these places:
+
+- **Bitbug** crawls the Home headline — the one playful moment on the page.
+- **Pip** perches on Home's primary call to action.
+- **Lurk** peeks over the Progress empty state — the page with nothing to
+  report yet gets the shy one.
+- **Munshi**, a custom pal drawn for Riyaz (ink body, Answer-Green cap and
+  pen, an open register in both hands, `mind` behaviour), keeps the footer
+  brand line — and exists only while Home is the active route. (`mind` is
+  defined by the moss pal file, so that file is loaded as a behaviour pack;
+  the moss pal itself is never placed.)
+
+Rules that outrank the charm: pals never appear on the typing stage, the
+NCRTC runner, Arena or Studio — the stage is sacred (Principle 1) — and
+their scripts load lazily, only from Home and from the Progress empty
+state. They respect `prefers-reduced-motion`, pause off-screen, and never
+intercept a click meant for the interface.
