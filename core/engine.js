@@ -66,26 +66,26 @@ const ENGINE_CSS = `
 .ts-readout .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted,#9A978C)}
 .ts-prog{height:3px;background:var(--line,#2A2C33);border-radius:2px;margin-top:10px;overflow:hidden}
 .ts-prog i{display:block;height:100%;width:0;background:var(--accent,#F59E0B);transition:width .25s ease}
-.ts-typebox{position:relative;margin-top:14px;border:1px solid var(--line,#2A2C33);border-radius:16px;background:var(--surface,#15171C);padding:22px 24px;max-height:342px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
-.ts-typebox.focused{border-color:var(--accent,#F59E0B)}
+.ts-typebox{position:relative;margin-top:14px;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);padding:22px 24px;max-height:342px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
+.ts-typebox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,var(--line-strong,var(--line,#2A2C33)))}
 .ts-typetext{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1}
 .ts-typetext .ch{border-radius:3px}
 .ts-typetext .ch.ok{color:var(--ok,#4ADE80)}
 .ts-typetext .ch.bad{color:var(--error,#F87171);background:color-mix(in srgb,var(--error,#F87171) 13%,transparent)}
-.ts-typetext .ch.cur{box-shadow:inset 0 -2px 0 var(--accent,#F59E0B)}
-.ts-caret{position:absolute;width:2px;background:var(--accent,#F59E0B);border-radius:1px;z-index:2;pointer-events:none;opacity:0}
-.ts-caret.on{opacity:1;animation:tsblink 1.05s steps(1) infinite}
-@keyframes tsblink{0%,55%{opacity:1}56%,100%{opacity:.15}}
-.ts-capture{position:absolute;inset:0;width:100%;height:100%;opacity:0;resize:none;border:0;padding:22px 24px;font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;z-index:3}
+.ts-caret{position:absolute;width:2px;background:var(--accent,#F59E0B);border-radius:1px;z-index:2;pointer-events:none;opacity:0;transition:left 55ms ease-out,top 55ms ease-out}
+.ts-caret.on{opacity:1;animation:tsblink 1.1s ease-in-out infinite}
+@keyframes tsblink{0%,38%{opacity:1}72%{opacity:.12}100%{opacity:1}}
+.ts-capture{position:absolute;inset:0;width:100%;height:100%;opacity:0;resize:none;border:0;outline:none!important;box-shadow:none!important;padding:22px 24px;font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;z-index:3}
 .ts-paper-head{display:flex;align-items:center;gap:10px;margin-top:16px}
 .ts-paper-head .cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#9A978C)}
 .ts-sheet{margin-top:8px;background:var(--sheet-bg,#FFFCF4);color:var(--sheet-ink,#191B1F);border:1px solid var(--line,#2A2C33);border-radius:8px;padding:24px 28px 30px;max-height:238px;overflow-y:auto;overscroll-behavior:contain;font-family:var(--font-sheet,"Newsreader",Georgia,serif);font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;box-shadow:0 2px 12px rgba(0,0,0,.14)}
-.ts-paperbox{position:relative;margin-top:12px;border:1px solid var(--line,#2A2C33);border-radius:16px;background:var(--surface,#15171C);padding:20px 24px;height:240px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
-.ts-paperbox.focused{border-color:var(--accent,#F59E0B)}
+.ts-paperbox{position:relative;margin-top:12px;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);padding:20px 24px;height:240px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
+.ts-paperbox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,var(--line-strong,var(--line,#2A2C33)))}
 .ts-paper-typed{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1;min-height:calc(var(--ts-fs)*var(--ts-lh))}
 .ts-paper-typed .ph{color:var(--muted,#9A978C)}
-.ts-ptcaret{display:inline-block;width:0;height:1em;position:relative;vertical-align:-0.12em}
-.ts-ptcaret::before{content:"";position:absolute;left:-1px;top:0;width:2px;height:1.12em;background:var(--accent,#F59E0B);border-radius:1px;animation:tsblink 1.05s steps(1) infinite}
+.ts-ptcaret{display:inline;position:relative}
+.ts-ptcaret::after{content:"\\200B"}
+.ts-ptcaret::before{content:"";position:absolute;left:-1px;top:-0.04em;bottom:-0.04em;width:2px;background:var(--accent,#F59E0B);border-radius:1px;animation:tsblink 1.1s ease-in-out infinite}
 .ts-paperbox .ts-capture,.ts-typebox .ts-capture{padding:20px 24px}
 .ts-typebox .ts-capture{padding:22px 24px}
 .ts-prepanel{margin-top:16px;border:1px solid var(--line,#2A2C33);border-radius:16px;background:var(--surface,#15171C);padding:22px 24px}
@@ -162,7 +162,7 @@ header,nav{transition:opacity .3s ease}
 .ts-actions button.ts-btn{display:inline-flex;align-items:center;gap:6px}
 @media (max-width:680px){.ts-hero-row{grid-template-columns:1fr}.ts-verdict-hero{padding:18px 18px}}
 @media (max-width:560px){.ts-stage{padding:14px 12px 56px}.ts-typebox{padding:18px 16px}.ts-sheet{padding:18px 18px 26px}.ts-capture{padding:18px 16px}.ts-eb-row{grid-template-columns:104px 1fr 28px}}
-@media (prefers-reduced-motion: reduce){.ts-caret.on,.ts-ptcaret::before{animation:none}.ts-prog i,.ts-acc-ring .fg{transition:none}.ts-result,.ts-stamp,.ts-confetti i{animation:none;display:none}}
+@media (prefers-reduced-motion: reduce){.ts-caret{transition:none}.ts-caret.on,.ts-ptcaret::before{animation:none}.ts-prog i,.ts-acc-ring .fg{transition:none}.ts-result,.ts-stamp,.ts-confetti i{animation:none;display:none}}
 .ts-printarea{display:none}
 @media print{body>*{display:none!important}body>.ts-printarea{display:block!important;color:#000;background:#fff;font-family:Georgia,serif;font-size:14pt;line-height:1.7;padding:24px;white-space:pre-wrap}}
 `;
@@ -933,7 +933,6 @@ class Stage {
     const kids = this.typeText.children;
     for (let i = 0; i < kids.length; i++) {
       let cls = "ch";
-      if (i === this.caret) cls += " cur";
       if (flags && flags[i] === true) cls += " ok";
       else if (flags && flags[i] === false && showErr) cls += " bad";
       else if (flags && flags[i] === false) cls += " ok";
@@ -960,13 +959,29 @@ class Stage {
     const kids = this.typeText.children;
     const el = this.caretEl;
     if (!kids.length || this.finished) { el.classList.remove("on"); return; }
-    const idx = Math.max(0, Math.min(this.caret, kids.length - 1));
+    const box = this.typeBox;
+    const boxRect = box.getBoundingClientRect();
+    if (!boxRect.height) return;
+    const atEnd = this.caret >= kids.length;
+    let idx = atEnd ? kids.length - 1 : Math.max(0, this.caret);
+    let placeAfter = atEnd;
     const sp = kids[idx];
     if (!sp) { el.classList.remove("on"); return; }
+    let r = sp.getBoundingClientRect();
+    if ((r.height === 0 || r.width === 0) && idx > 0) {
+      const prevR = kids[idx - 1].getBoundingClientRect();
+      if (prevR.height > 0) { r = prevR; placeAfter = true; }
+    }
+    if (!r.height) { el.classList.remove("on"); return; }
     const fs = FONT_PX[this.fontStep];
-    el.style.left = (this.typeBox.scrollLeft * 0 + sp.offsetLeft - 2) + "px";
-    el.style.top = sp.offsetTop + "px";
-    el.style.height = Math.round(fs * 1.3) + "px";
+    const h = Math.round(fs * 1.32);
+    const x = (placeAfter ? r.right : r.left) - boxRect.left - box.clientLeft + box.scrollLeft - 1;
+    const y = (r.top - boxRect.top - box.clientTop + box.scrollTop) + ((r.height - h) / 2);
+    el.style.left = Math.round(x) + "px";
+    el.style.top = Math.round(y) + "px";
+    el.style.height = h + "px";
+    el.classList.remove("on");
+    void el.offsetWidth;
     el.classList.add("on");
   }
 
@@ -978,9 +993,9 @@ class Stage {
     pt.innerHTML = "";
     this.paperTextNode = null;
     if (!typed.length) {
+      pt.appendChild(h("span", "ts-ptcaret"));
       const ph = h("span", "ph", "Start typing — what you type appears here, under the sheet.");
       pt.appendChild(ph);
-      pt.appendChild(h("span", "ts-ptcaret"));
       return;
     }
     const before = document.createTextNode(typed.slice(0, this.caret));
