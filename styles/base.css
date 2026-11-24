@@ -61,6 +61,11 @@ button {
   border-radius: 4px;
 }
 
+piix-pal,
+piix-pal canvas {
+  pointer-events: none !important;
+}
+
 ::selection {
   background: var(--accent-dim);
 }

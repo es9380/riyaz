@@ -4,10 +4,10 @@
 
 import { COUNTS } from "../data/counts.js";
 import { EXAM_SPECS, specOf } from "../data/examSpecs.js";
-import { examState, go } from "../app.js";
+import { examState } from "../app.js";
 import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
-import { esc } from "../core/util.js";
+import { esc, icon } from "../core/util.js";
 
 const CIRC = 2 * Math.PI * 26;
 
@@ -499,34 +499,92 @@ window.addEventListener("hashchange", () => {
   if (el) el.remove();
 });
 
+function calcStreak(hist) {
+  if (!hist.length) return 0;
+  const days = new Set();
+  for (const h of hist) {
+    const d = new Date(h.ts || h.dateStr);
+    if (!Number.isNaN(d.getTime())) days.add(d.toDateString());
+  }
+  const cur = new Date();
+  cur.setHours(0, 0, 0, 0);
+  if (!days.has(cur.toDateString())) cur.setDate(cur.getDate() - 1);
+  let streak = 0;
+  while (days.has(cur.toDateString())) {
+    streak++;
+    cur.setDate(cur.getDate() - 1);
+  }
+  return streak;
+}
+
+function examBest(hist, examId) {
+  const mine = hist.filter((h) => (examId === "hcm" ? (!h.examId || h.examId === "hcm") : h.examId === examId));
+  const mocks = mine.filter((h) => h.mode === "mock");
+  const passed = mocks.filter((h) => h.qualified).length;
+  const bestNet = mine.length ? Math.max(...mine.map((h) => Math.round(h.net || 0))) : null;
+  const triedIds = new Set(mocks.map((h) => h.testId).filter(Boolean));
+  return { count: mine.length, mocksTried: triedIds.size, passed, bestNet };
+}
+
 /* ——— Page ——— */
 
 export function renderHome(view) {
   const hist = store.history();
   const examId = examState.get();
-  const spec = specOf(examId);
+  const spec = specOf(examId) || EXAM_SPECS[0];
   const todayCount = hist.filter((h) => sameDay(h.ts, Date.now())).length;
   const goal = Math.max(1, store.goal() || 2);
   const days = normDays(safeDays(hist), hist);
   const todayMin = days.length ? days[days.length - 1].minutes : 0;
+  const weekMin = days.reduce((s, d) => s + (d.minutes || 0), 0);
   const readiness = normReadiness(safeReadiness(hist, examId), hist, examId);
+  const readyPct = Math.round(readiness * 100);
+  const readyTier = readyPct >= 75 ? "ok" : readyPct >= 40 ? "mid" : "low";
+  const streak = calcStreak(hist);
+  const activeExamStats = examBest(hist, examId);
   const step = normNextStep(safeNext(hist, examId), hist, examId);
+  const totalMocks = COUNTS.mocks.hcm + COUNTS.mocks.chsl + COUNTS.mocks.cgl + COUNTS.mocks.rrb;
+
+  const sheetTarget = spec.targetWPM ? `${spec.targetWPM} WPM` : "Complete text";
+  const sheetRule = spec.id === "hcm" ? "Marks 25" : spec.backspace ? "Backspace On" : "Backspace Off";
 
   view.innerHTML = `
   <section class="hero">
-    <h1>One line a day,<br />in the register.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
-    <p class="hero-lede">Daily typing practice for <strong>Delhi Police HCM</strong>, <strong>SSC CHSL</strong>,
-      <strong>SSC CGL DEST</strong> and <strong>RRB NTPC</strong> — ${COUNTS.mocks.hcm + COUNTS.mocks.chsl + COUNTS.mocks.cgl + COUNTS.mocks.rrb} full mocks
-      scored by each exam's own rulebook, ${COUNTS.drills} drills, and a register that remembers
-      every entry. The sheet below is already open. Start typing.</p>
+    <div class="hero-top">
+      <div class="hero-copy">
+        <h1>One line a day,<br />in the register.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
+        <p class="hero-sub">Real exam rules, clean timing, instant error breakdown.</p>
+        <div class="hero-facts" aria-label="Library overview">
+          <span class="fact-pill">${icon("target", 14)} ${totalMocks} Exam Mocks</span>
+          <span class="fact-pill">${icon("keyboard", 14)} ${COUNTS.drills} Drills</span>
+          <span class="fact-pill">${icon("flame", 14)} ${COUNTS.warmups} Warm-ups</span>
+        </div>
+      </div>
+      <div class="hero-action-box">
+        <div class="exam-switch hero-exams" role="group" aria-label="Your active exam">
+          ${EXAM_SPECS.map((s) => `<button type="button" data-exam="${s.id}" aria-pressed="${s.id === examId}">${esc(s.short)}</button>`).join("")}
+        </div>
+        <div class="hero-ctas">
+          <a class="btn btn-primary btn-lg" id="heroMainCta" href="#/hub/${examId}">
+            ${icon("play", 16)}
+            <span>Practise ${esc(spec.short)}</span>
+          </a>
+          <piix-pal pal="pip" on="#heroMainCta" hue="114" scale="3"></piix-pal>
+          <a class="btn" href="#/studio">
+            ${icon("bolt", 16)}
+            <span>Quick Drills</span>
+          </a>
+        </div>
+      </div>
+    </div>
 
     <div class="demo" aria-label="Live typing demo — a practice sheet">
       <div class="sheet-top">
-        <span class="sheet-top-title">English Typing — Practice Sheet</span>
+        <span class="sheet-top-title">${esc(spec.short)} — Live Warm-up Sheet</span>
         <span class="sheet-top-fields" aria-hidden="true">
-          <span>Time <b>10 min</b></span>
-          <span>Target <b>30 WPM</b></span>
-          <span>Marks <b>25</b></span>
+          <span>Time <b>${spec.durationMin} min</b></span>
+          <span>Target <b>${esc(sheetTarget)}</b></span>
+          <span><b>${esc(sheetRule)}</b></span>
         </span>
       </div>
       <div class="demo-body" tabindex="0" role="textbox" aria-label="Typing demo. Activate to type the line yourself.">
@@ -534,7 +592,7 @@ export function renderHome(view) {
       </div>
       <div class="sheet-foot">
         <span class="demo-state"><span class="pulse" aria-hidden="true"></span><span class="demo-state-text">Live demo</span></span>
-        <span class="demo-hint">Click the sheet and type it yourself — it hands control back after 12 idle seconds.</span>
+        <span class="demo-hint">Click sheet &amp; type — auto-resumes after 12s idle.</span>
         <span class="demo-hud" aria-hidden="true">
           <span class="dh"><span>Speed</span><b class="dh-wpm num">0</b></span>
           <span class="dh"><span>Accuracy</span><b class="dh-acc num">100%</b></span>
@@ -545,41 +603,47 @@ export function renderHome(view) {
 
   <section class="section" aria-labelledby="todayH">
     <div class="section-head">
-      <h2 id="todayH">Today</h2>
-      <span class="aside">${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}</span>
+      <h2 id="todayH">Your Story Today</h2>
+      <span class="aside">${streak ? `${icon("flame", 14)} ${streak}-day streak · ` : ""}${new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}</span>
     </div>
     <div class="today-strip">
       <div class="today-cell">
         <div class="readout">
+          <span class="tile-kicker">${icon("check", 14)} Done today</span>
           <span class="readout-value num" id="todayTests">${todayCount}</span>
-          <span class="label">Tests finished today</span>
+          <span class="label">${streak ? `${streak}-day streak` : "Start today"}</span>
         </div>
       </div>
       <div class="today-cell">
         <div class="dual-goal">
           ${ringSVG(Math.min(1, todayCount / goal), `Daily goal: ${todayCount} of ${goal} tests`)}
           <div class="dual-goal-text">
-            <span class="big num"><span id="goalNow">${todayCount}</span> / <span id="goalMax">${goal}</span></span>
             <span class="label">Daily goal</span>
-            <span id="goalEditWrap"><button class="link-btn" id="goalChange" type="button">Change goal</button></span>
+            <span class="big num"><span id="goalNow">${todayCount}</span> / <span id="goalMax">${goal}</span></span>
+            <div class="goal-stepper" aria-label="Adjust daily goal">
+              <button type="button" id="goalDec" aria-label="Decrease daily goal">−</button>
+              <button type="button" id="goalInc" aria-label="Increase daily goal">+</button>
+            </div>
           </div>
         </div>
       </div>
       <div class="today-cell">
         <div class="readout">
-          <span class="readout-value num" id="readyPct">${Math.round(readiness * 100)}<span class="unit">%</span></span>
-          <span class="label">Readiness · <span id="readyExam">${esc(spec ? spec.short : "")}</span></span>
+          <span class="tile-kicker">${icon("target", 14)} ${esc(spec.short)}</span>
+          <span class="readout-value num ready-${readyTier}" id="readyPct">${readyPct}<span class="unit">%</span></span>
+          <div class="mini-meter" aria-hidden="true"><i class="fill-${readyTier}" style="width:${readyPct}%"></i></div>
+          <span class="label">${activeExamStats.bestNet != null ? `Best ${activeExamStats.bestNet} WPM` : "No mock yet"}</span>
         </div>
       </div>
       <div class="today-cell wide">
         <div class="tt-head">
           <span class="tt-total num" id="ttTotal">${todayMin} min</span>
-          <span class="tt-when" id="ttWhen">Typing time today</span>
+          <span class="tt-when" id="ttWhen">Today · ${weekMin}m this week</span>
         </div>
         <div class="tt-bars" id="ttBars" role="group" aria-label="Typing time, last 7 days">
           ${days.map((d, i) => {
             const max = Math.max(30, ...days.map((x) => x.minutes));
-            const h = Math.max(6, Math.round((d.minutes / max) * 100));
+            const h = Math.max(8, Math.round((d.minutes / max) * 100));
             return `<button type="button" class="tt-bar${d.today ? " sel" : ""}" data-day="${i}"
               aria-label="${esc(d.full || d.label)}, ${d.minutes} minutes">
               <i style="height:${h}%"></i></button>`;
@@ -592,44 +656,52 @@ export function renderHome(view) {
     </div>
 
     <div class="next-step">
+      <span class="ns-ico" aria-hidden="true">${icon("bolt", 20)}</span>
       <div class="ns-text">
-        <p class="label">Next best step</p>
+        <p class="label">Recommended next</p>
         <p class="ns-title" id="nsTitle">${esc(step.title)}</p>
-        ${step.why ? `<p class="ns-why">${esc(step.why)}</p>` : ""}
       </div>
-      <a class="btn btn-primary" id="nsCta" href="${esc(step.hash)}">${esc(step.ctaLabel)}</a>
-      <piix-pal pal="pip" on="#nsCta" hue="114" scale="3"></piix-pal>
+      <a class="btn btn-primary" id="nsCta" href="${esc(step.hash)}">
+        ${icon("arrowRight", 15)}
+        <span>${esc(step.ctaLabel)}</span>
+      </a>
     </div>
   </section>
 
   <section class="section" aria-labelledby="examsH">
     <div class="section-head">
-      <h2 id="examsH">Choose your exam</h2>
-      <span class="aside">Readiness and recommendations follow your pick</span>
-    </div>
-    <div class="exam-switch" role="group" aria-label="Your exam">
-      ${EXAM_SPECS.map((s) => `<button type="button" data-exam="${s.id}" aria-pressed="${s.id === examId}">${esc(s.short)}</button>`).join("")}
+      <h2 id="examsH">All 4 Exams</h2>
+      <a class="link-btn" href="#/arena">Custom text test →</a>
     </div>
     <div class="exam-rows">
-      ${EXAM_SPECS.map((s) => `
+      ${EXAM_SPECS.map((s) => {
+        const st = examBest(hist, s.id);
+        const total = COUNTS.mocks[s.id] || 0;
+        const pct = total ? Math.round((st.mocksTried / total) * 100) : 0;
+        return `
         <a class="exam-row" href="#/hub/${s.id}">
           <span>
             <span class="er-name">${esc(s.name)}</span>
-            <span class="er-meta" style="display:block">${esc(s.posts)} · ${esc(s.durationLabel)} · Target ${esc(s.targetLabel)}</span>
+            <span class="er-chips">
+              <span class="chip">${icon("clock", 12)} ${s.durationMin} min</span>
+              <span class="chip">${icon("target", 12)} ${s.targetWPM ? `${s.targetWPM} WPM` : "Complete"}</span>
+              <span class="chip">${s.backspace ? "Backspace On" : "Backspace Off"}</span>
+              ${st.bestNet != null ? `<span class="chip chip-ok">${icon("trophy", 12)} Best ${st.bestNet} WPM</span>` : ""}
+            </span>
           </span>
           <span class="er-side">
-            <span class="er-count num">${COUNTS.mocks[s.id] || 0}</span>
-            <span class="label">Mocks</span>
+            <span class="er-count num">${st.mocksTried}<span class="er-total">/${total}</span></span>
+            <span class="mini-meter er-meter" aria-hidden="true"><i class="fill-accent" style="width:${pct}%"></i></span>
+            <span class="label">Mocks done</span>
           </span>
-        </a>`).join("")}
+        </a>`;
+      }).join("")}
     </div>
   </section>`;
 
   mountDemo(view);
 
-  /* Typing-time bars: peek at a day, revert to today after 4.5s. After an
-     auto-revert, the bar under a resting pointer stays muted until the
-     pointer leaves the strip or picks another bar (the v20 lesson). */
+  /* Typing-time bars: peek at a day, revert to today after 4.5s. */
   const barsWrap = view.querySelector("#ttBars");
   const ttTotal = view.querySelector("#ttTotal");
   const ttWhen = view.querySelector("#ttWhen");
@@ -644,7 +716,7 @@ export function renderHome(view) {
     const d = days[i];
     if (!d) return;
     ttTotal.textContent = `${d.minutes} min`;
-    ttWhen.textContent = d.today ? "Typing time today" : `Typing time · ${d.full || d.label}`;
+    ttWhen.textContent = d.today ? `Today · ${weekMin}m this week` : `${d.full || d.label}`;
     if (revertTimer) clearTimeout(revertTimer);
     if (!d.today) {
       revertTimer = setTimeout(() => {
@@ -665,61 +737,30 @@ export function renderHome(view) {
     barsWrap.addEventListener("mouseleave", () => { spentBar = -1; });
   }
 
-  /* Daily goal: inline change, saved through the store. */
-  function wireGoalEdit() {
-    const goalBtn = view.querySelector("#goalChange");
-    if (!goalBtn) return;
-    goalBtn.addEventListener("click", () => {
-      const currentGoal = Math.max(1, store.goal() || 2);
-      const wrap = view.querySelector("#goalEditWrap");
-      wrap.innerHTML = `<span class="goal-edit-inline">
-        <input id="goalInput" type="number" min="1" max="10" value="${currentGoal}"
-          aria-label="Daily goal, tests per day" />
-        <button class="link-btn" id="goalSave" type="button">Save</button>
-        <button class="link-btn link-muted" id="goalCancel" type="button">Cancel</button></span>`;
-      const input = wrap.querySelector("#goalInput");
-      input.focus();
-      input.select();
-
-      const closeEdit = () => {
-        wrap.innerHTML = `<button class="link-btn" id="goalChange" type="button">Change goal</button>`;
-        wireGoalEdit();
-      };
-
-      const saveGoal = () => {
-        store.setGoal(parseInt(input.value, 10));
-        /* Show the EFFECTIVE stored goal, never the raw typed value: the
-           store's valid range is 1–10, so display and storage must be read
-           back from the store to guarantee they can never disagree. */
-        const effective = store.goal();
-        view.querySelector("#goalMax").textContent = String(effective);
-        const ring = view.querySelector(".dual-goal .mini-ring");
-        if (ring) {
-          ring.setAttribute("aria-label", `Daily goal: ${todayCount} of ${effective} tests`);
-          const fg = ring.querySelector(".ring-fg");
-          if (fg) fg.setAttribute("stroke-dashoffset", (CIRC * (1 - Math.min(1, todayCount / effective))).toFixed(1));
-        }
-        closeEdit();
-      };
-
-      wrap.querySelector("#goalSave").addEventListener("click", saveGoal);
-      wrap.querySelector("#goalCancel").addEventListener("click", closeEdit);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); saveGoal(); }
-        else if (e.key === "Escape") { e.preventDefault(); closeEdit(); }
-      });
-    });
+  /* Instant +/- goal stepper synced with store + ring */
+  function syncGoalUI() {
+    const effective = store.goal();
+    const gMax = view.querySelector("#goalMax");
+    if (gMax) gMax.textContent = String(effective);
+    const ring = view.querySelector(".dual-goal .mini-ring");
+    if (ring) {
+      ring.setAttribute("aria-label", `Daily goal: ${todayCount} of ${effective} tests`);
+      const fg = ring.querySelector(".ring-fg");
+      if (fg) fg.setAttribute("stroke-dashoffset", (CIRC * (1 - Math.min(1, todayCount / effective))).toFixed(1));
+    }
   }
-  wireGoalEdit();
 
-  /* Exam switcher: readiness + next step follow the pick. */
+  const gDec = view.querySelector("#goalDec");
+  const gInc = view.querySelector("#goalInc");
+  if (gDec) gDec.addEventListener("click", () => { store.setGoal(store.goal() - 1); syncGoalUI(); });
+  if (gInc) gInc.addEventListener("click", () => { store.setGoal(store.goal() + 1); syncGoalUI(); });
+
+  /* Exam switcher: hero CTA, live sheet header, readiness + next step follow the pick. */
   view.querySelectorAll("[data-exam]").forEach((btn) => {
     btn.addEventListener("click", () => examState.set(btn.dataset.exam));
   });
 
-  /* Delight layer: load the two stock pals declared in this page's
-     markup, the moss behaviour pack Munshi depends on, and settle
-     Munshi into the footer brand line. */
+  /* Delight layer */
   injectPal("bitbug");
   injectPal("pip");
   injectPal("moss");
@@ -739,4 +780,15 @@ function safeNext(hist, examId) {
 window.addEventListener("ts:exam", () => {
   const view = document.getElementById("view");
   if (view && view.querySelector(".hero")) renderHome(view);
+});
+
+window.addEventListener("ts:prefs", () => {
+  const view = document.getElementById("view");
+  if (view && view.querySelector("#goalMax")) {
+    const g = store.goal();
+    view.querySelector("#goalMax").textContent = String(g);
+    const todayCount = parseInt(view.querySelector("#todayTests")?.textContent || "0", 10);
+    const fg = view.querySelector(".dual-goal .ring-fg");
+    if (fg) fg.setAttribute("stroke-dashoffset", (CIRC * (1 - Math.min(1, todayCount / g))).toFixed(1));
+  }
 });
