@@ -4,14 +4,14 @@
    in tokens.css: --muted, --error, --font-sheet, plus --ink, --line,
    --surface, --accent, --ok, --sheet-bg, --sheet-ink, --header-h).
    What lives here: the shared caret keyframes (hero demo), result-screen
-   primitives reused by the NCRTC review, and table/comparison styles. */
+   primitives reused by stored-result detail, and table/comparison styles. */
 
 @keyframes caret-blink {
   0%, 55% { opacity: 1; }
   56%, 100% { opacity: 0; }
 }
 
-/* ——— Result primitives (shared: NCRTC review, stored-result detail) ——— */
+/* ——— Result primitives (shared: stored-result detail) ——— */
 
 .result-head {
   padding: 18px 0 20px;

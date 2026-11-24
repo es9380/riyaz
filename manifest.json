@@ -1,0 +1,17 @@
+{
+  "name": "Riyaz — Typing Practice for Government Exams",
+  "short_name": "Riyaz",
+  "description": "Daily typing practice for Delhi Police HCM, SSC CHSL, SSC CGL DEST and RRB NTPC.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0b17",
+  "theme_color": "#0a0b17",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

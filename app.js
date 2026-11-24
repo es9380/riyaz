@@ -122,7 +122,6 @@ const routes = [
   },
   { re: /^studio$/, nav: "studio", load: () => import("features/studio.js"), run: (m) => m.renderStudio(view) },
   { re: /^progress$/, nav: "progress", load: () => import("features/progress.js"), run: (m) => m.renderProgress(view) },
-  { re: /^ncrtc$/, nav: "ncrtc", load: () => import("features/ncrtc.js"), run: (m) => m.renderNcrtc(view) },
 ];
 
 function setNav(nav) {
@@ -145,8 +144,7 @@ export async function route() {
     return;
   }
 
-  /* Leaving a stage (or any page): tell listeners (the engine, NCRTC shortcuts) to tidy up. */
-  window.dispatchEvent(new CustomEvent("ts:navigate", { detail: { route: raw } }));
+  /* Leaving a stage (or any page): tell listeners (the engine) to tidy up. */
   if (stageActive) {
     stageActive = false;
     window.dispatchEvent(new CustomEvent("ts:leave-stage"));
@@ -181,3 +179,9 @@ export async function route() {
 
 window.addEventListener("hashchange", route);
 route();
+
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

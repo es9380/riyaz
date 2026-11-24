@@ -348,7 +348,7 @@ function mountDemo(root) {
    Bitbug lives in the headline and Pip on the primary CTA (both declared
    in the markup above); Munshi, a custom pal, keeps the footer brand
    line. Scripts are injected only from here and from Progress's empty
-   state — never on the stage, Arena, Studio or NCRTC routes. Pals are
+   state — never on the stage, Arena or Studio routes. Pals are
    hue-rotated toward Answer Green so they belong to the register.
    See DESIGN.md, "Delight layer". */
 

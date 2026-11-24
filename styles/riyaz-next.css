@@ -105,8 +105,6 @@ body {
 .hist-row, .detail-panel, .builder, .next-step, .set-block { border-radius: var(--radius-lg); }
 .hist-row:hover { background: var(--surface); }
 .key-chip, .word-chip, .badge { border-radius: var(--radius-pill); }
-.nc-opt { border-radius: var(--radius); transition: transform var(--dur) var(--ease), border-color var(--dur); }
-.nc-opt:hover { transform: translateX(3px); }
 
 /* Motion: snappy page entrance without hiding filtered rows */
 @media (prefers-reduced-motion: no-preference) {
