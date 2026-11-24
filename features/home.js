@@ -348,6 +348,161 @@ function mountDemo(root) {
   autoStep();
 }
 
+/* ——— Delight layer: Piixpal (self-hosted, vendor/piixpal/) ———
+   Bitbug lives in the headline and Pip on the primary CTA (both declared
+   in the markup above); Munshi, a custom pal, keeps the footer brand
+   line. Scripts are injected only from here and from Progress's empty
+   state — never on the stage, Arena, Studio or NCRTC routes. Pals are
+   hue-rotated toward Answer Green so they belong to the register.
+   See DESIGN.md, "Delight layer". */
+
+function injectPal(name) {
+  if (document.querySelector(`script[data-piix="${name}"]`)) return;
+  const s = document.createElement("script");
+  s.src = "vendor/piixpal/c/" + name + ".min.js";
+  s.dataset.piix = name;
+  document.head.appendChild(s);
+}
+
+/* Munshi — the register-keeper. Ink body, Answer-Green cap and pen, an
+   open register in both hands. He runs the 'mind' behaviour — reads the
+   register, turns a page, dozes over it — so he ships the same clip
+   vocabulary Moss uses for that behaviour (read / flip / doze / look,
+   plus idle and a poke reaction). NOTE: 'mind' is not a core behaviour —
+   it is defined by moss.min.js, so that file is loaded too (it registers
+   the behaviour; the moss pal itself is never placed). registerMunshi
+   waits for the behaviour to exist before mounting him: an element
+   asking for an unregistered behaviour is silently never recruited. */
+const MUNSHI_BODY = [
+  "....gggg....",
+  "..gggggggg..",
+  ".gddddddddg.",
+  "..kkkkkkkk..",
+  "..kppkkppk..",
+  "...kkkkkk...",
+  ".kkkkkkkkkk.",
+  ".kkppppppkk.",
+  ".kkppppppkg.",
+  ".kkppppppkk.",
+  "..kkkkkkkk..",
+  "..kkk..kkk..",
+  ".kkkk..kkkk.",
+];
+const munshiFrame = (row4, extra) => {
+  const f = MUNSHI_BODY.slice();
+  if (row4) f[4] = row4;
+  if (extra) extra(f);
+  return f;
+};
+const MUNSHI = {
+  w: 12,
+  h: 13,
+  scale: 3,
+  does: "mind",
+  palette: { k: "#182238", g: "#2fbf8f", d: "#0b7a55", p: "#fdfcf7" },
+  frames: {
+    idle: [MUNSHI_BODY, munshiFrame("..kkkkkkkk..")],
+    look: [
+      munshiFrame(".kppkkppkk.."),
+      MUNSHI_BODY,
+      munshiFrame("...kppkkppk."),
+      MUNSHI_BODY,
+    ],
+    read: [
+      munshiFrame("..kkkkkkkk..", (f) => { f[5] = "...kpkkpk..."; }),
+      munshiFrame("..kkkkkkkk..", (f) => {
+        f[5] = "...kpkkpk...";
+        f[7] = ".kkppppppkg.";
+        f[8] = ".kkppppppkk.";
+      }),
+    ],
+    flip: [
+      munshiFrame(null, (f) => { f[7] = ".kkppgpppkk."; f[8] = ".kkppgpppkk."; }),
+      munshiFrame(null, (f) => { f[7] = ".kkpppppgpk."; f[8] = ".kkpppppgpk."; }),
+    ],
+    doze: [
+      [
+        ".....gggg...",
+        "...gggggggg.",
+        "..gddddddddg",
+        "..kkkkkkkk..",
+        "..kkkkkkkk..",
+        "...kkkkkk...",
+        ".kkkkkkkkkk.",
+        ".kkppppppkk.",
+        ".kkppppppkg.",
+        ".kkppppppkk.",
+        "..kkkkkkkk..",
+        "..kkk..kkk..",
+        ".kkkk..kkkk.",
+      ],
+      [
+        ".....gggg..p",
+        "...gggggggg.",
+        "..gddddddddg",
+        "..kkkkkkkk..",
+        "..kkkkkkkk..",
+        "...kkkkkk...",
+        ".kkkkkkkkkk.",
+        ".kkppppppkk.",
+        ".kkppppppkg.",
+        ".kkppppppkk.",
+        "..kkkkkkkk..",
+        "..kkk..kkk..",
+        ".kkkk..kkkk.",
+      ],
+    ],
+    annoyed: [munshiFrame("..kkkkkkkk..")],
+  },
+  fps: { idle: 2, look: 2, read: 1, flip: 7, doze: 1 },
+};
+
+let munshiState = "idle"; /* idle | waiting | done | failed */
+
+const onHomeRoute = () => location.hash.replace(/^#\/?/, "") === "";
+
+function mountMunshi() {
+  if (!onHomeRoute()) return;
+  const host = document.querySelector(".footer-in > span");
+  if (!host || host.querySelector("piix-pal")) return;
+  const el = document.createElement("piix-pal");
+  el.setAttribute("pal", "munshi");
+  el.setAttribute("scale", "3");
+  host.appendChild(el);
+}
+
+function registerMunshi() {
+  if (munshiState === "done") { mountMunshi(); return; }
+  if (munshiState !== "idle") return;
+  munshiState = "waiting";
+  let tries = 0;
+  const attempt = () => {
+    if (window.Piixpal && typeof window.Piixpal.sprite === "function" &&
+        window.Piixpal.behaviors && window.Piixpal.behaviors.mind) {
+      try {
+        window.Piixpal.sprite("munshi", MUNSHI);
+        munshiState = "done";
+        mountMunshi();
+      } catch (e) {
+        munshiState = "failed"; /* the sprite API refused — ship without him */
+      }
+      return;
+    }
+    if (++tries <= 50) setTimeout(attempt, 120);
+    else munshiState = "failed";
+  };
+  attempt();
+}
+
+/* The footer outlives every route, so Munshi must not: he is removed the
+   moment the route leaves Home (the stage above all — no pals there).
+   renderHome mounts him again on return. */
+window.addEventListener("hashchange", () => {
+  if (onHomeRoute()) return;
+  const el = document.querySelector(".site-footer piix-pal");
+  if (el) el.remove();
+});
+
 /* ——— Page ——— */
 
 export function renderHome(view) {
@@ -363,7 +518,7 @@ export function renderHome(view) {
 
   view.innerHTML = `
   <section class="hero">
-    <h1>One line a day,<br />in the register.</h1>
+    <h1>One line a day,<br />in the register.<piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></h1>
     <p class="hero-lede">Daily typing practice for <strong>Delhi Police HCM</strong>, <strong>SSC CHSL</strong>,
       <strong>SSC CGL DEST</strong> and <strong>RRB NTPC</strong> — ${COUNTS.mocks.hcm + COUNTS.mocks.chsl + COUNTS.mocks.cgl + COUNTS.mocks.rrb} full mocks
       scored by each exam's own rulebook, ${COUNTS.drills} drills, and a register that remembers
@@ -447,6 +602,7 @@ export function renderHome(view) {
         ${step.why ? `<p class="ns-why">${esc(step.why)}</p>` : ""}
       </div>
       <a class="btn btn-primary" id="nsCta" href="${esc(step.hash)}">${esc(step.ctaLabel)}</a>
+      <piix-pal pal="pip" on="#nsCta" hue="114" scale="3"></piix-pal>
     </div>
   </section>
 
@@ -550,6 +706,14 @@ export function renderHome(view) {
   view.querySelectorAll("[data-exam]").forEach((btn) => {
     btn.addEventListener("click", () => examState.set(btn.dataset.exam));
   });
+
+  /* Delight layer: load the two stock pals declared in this page's
+     markup, the moss behaviour pack Munshi depends on, and settle
+     Munshi into the footer brand line. */
+  injectPal("bitbug");
+  injectPal("pip");
+  injectPal("moss");
+  registerMunshi();
 }
 
 function safeDays(hist) {

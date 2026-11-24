@@ -3,6 +3,18 @@
 import * as store from "../core/store.js";
 import { specOf } from "../data/examSpecs.js";
 
+/* ——— Delight layer: Piixpal (self-hosted, vendor/piixpal/) ———
+   Lurk peeks over the empty state, and only the empty state: this
+   injector runs solely when that state renders, so a Progress page with
+   results never loads a single piixpal byte. See DESIGN.md. */
+function injectPal(name) {
+  if (document.querySelector(`script[data-piix="${name}"]`)) return;
+  const s = document.createElement("script");
+  s.src = "vendor/piixpal/c/" + name + ".min.js";
+  s.dataset.piix = name;
+  document.head.appendChild(s);
+}
+
 const esc = (s) =>
   String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -53,6 +65,15 @@ export function renderProgress(view) {
       <p>Finish one mock and this page starts keeping score for you.</p>
       <a class="btn btn-primary" href="#/arena">Take your first mock</a>
     </div>`;
+    const note = view.querySelector(".empty-note");
+    if (note) {
+      const el = document.createElement("piix-pal");
+      el.setAttribute("pal", "lurk");
+      el.setAttribute("hue", "-40");
+      el.setAttribute("scale", "3");
+      note.appendChild(el);
+    }
+    injectPal("lurk");
     return;
   }
 
