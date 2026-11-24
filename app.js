@@ -17,7 +17,7 @@ function applyTheme(t) {
     localStorage.setItem(THEME_KEY, JSON.stringify(t));
   } catch (e) {}
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", t === "light" ? "#f6f8f5" : "#0b1220");
+  if (meta) meta.setAttribute("content", t === "light" ? "#f3f4fb" : "#0a0b17");
   const btn = document.getElementById("themeToggle");
   if (btn) {
     btn.setAttribute("aria-label", t === "light" ? "Switch to dark theme" : "Switch to light theme");
@@ -39,8 +39,17 @@ applyTheme(currentTheme());
 const EXAM_KEY = "tsn_exam_v1";
 let examId = "hcm";
 try {
-  const saved = localStorage.getItem(EXAM_KEY);
-  if (saved) examId = saved;
+  const raw = localStorage.getItem(EXAM_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === "string" && parsed) examId = parsed;
+    } catch (_) {
+      /* backward compatibility with earlier raw-string writes */
+      examId = raw;
+      localStorage.setItem(EXAM_KEY, JSON.stringify(raw));
+    }
+  }
 } catch (e) {}
 
 export const examState = {
@@ -51,7 +60,7 @@ export const examState = {
     if (id === examId) return;
     examId = id;
     try {
-      localStorage.setItem(EXAM_KEY, id);
+      localStorage.setItem(EXAM_KEY, JSON.stringify(id));
     } catch (e) {}
     window.dispatchEvent(new CustomEvent("ts:exam", { detail: { examId: id } }));
   },
@@ -136,7 +145,8 @@ export async function route() {
     return;
   }
 
-  /* Leaving a stage (or any page): tell listeners (the engine) to tidy up. */
+  /* Leaving a stage (or any page): tell listeners (the engine, NCRTC shortcuts) to tidy up. */
+  window.dispatchEvent(new CustomEvent("ts:navigate", { detail: { route: raw } }));
   if (stageActive) {
     stageActive = false;
     window.dispatchEvent(new CustomEvent("ts:leave-stage"));

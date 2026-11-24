@@ -43,16 +43,16 @@ const ENGINE_CSS = `
 .ts-stage *{box-sizing:border-box}
 .ts-stage.ts-exam-live{margin-top:52px}
 .ts-bar{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 12px;border-bottom:1px solid var(--line,#2A2C33)}
-.ts-bar .ts-title{font-family:var(--font-display,"Space Grotesk",system-ui,sans-serif);font-size:17px;font-weight:600;letter-spacing:.01em;margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ts-btn{appearance:none;border:1px solid var(--line,#2A2C33);background:var(--surface,#15171C);color:var(--ink,#E8E6DF);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;line-height:1.2}
+.ts-bar .ts-title{font-family:var(--font-display,system-ui,sans-serif);font-size:17px;font-weight:600;letter-spacing:.01em;margin-right:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-btn{appearance:none;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--surface,#15171C);color:var(--ink,#E8E6DF);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;line-height:1.2;transition:border-color .16s ease,background-color .16s ease,color .16s ease}
 .ts-btn:hover{border-color:var(--accent,#F59E0B)}
 .ts-btn:focus-visible,.ts-pill-btn:focus-visible{outline:2px solid var(--accent,#F59E0B);outline-offset:2px}
-.ts-btn.on{background:var(--accent,#F59E0B);color:#141414;border-color:var(--accent,#F59E0B);font-weight:600}
-.ts-btn.primary{background:var(--accent,#F59E0B);color:#141414;border-color:var(--accent,#F59E0B);font-weight:700;padding:8px 20px}
+.ts-btn.on{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414);border-color:var(--accent,#F59E0B);font-weight:600}
+.ts-btn.primary{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414);border-color:var(--accent,#F59E0B);font-weight:700;padding:8px 20px}
 .ts-btn:disabled{opacity:.45;cursor:default}
-.ts-group{display:inline-flex;border:1px solid var(--line,#2A2C33);border-radius:999px;overflow:hidden}
+.ts-group{display:inline-flex;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:999px;overflow:hidden}
 .ts-group .ts-btn{border:0;border-radius:0;padding:7px 11px}
-.ts-group .ts-btn + .ts-btn{border-left:1px solid var(--line,#2A2C33)}
+.ts-group .ts-btn + .ts-btn{border-left:1px solid var(--line-strong,var(--line,#2A2C33))}
 .ts-bar-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9A978C);margin:0 2px 0 8px}
 .ts-pop{position:absolute;top:calc(100% + 6px);right:0;z-index:60;background:var(--surface,#15171C);border:1px solid var(--line,#2A2C33);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.35);padding:12px 14px;min-width:230px}
 .ts-pop[hidden]{display:none}
@@ -841,26 +841,34 @@ class Stage {
 
   /* Char flags for the screen view, from the family's OWN alignment so the
      colours always agree with the score: HCM family uses the audited
-     displayFlags; E1/E2 use scoreWordsEx pairs. */
+     displayFlags; E1/E2 use scoreWordsEx pairs mapped onto target-word offsets. */
   charFlags() {
     const tgt = this.target(), typed = this.typed;
     if (this.family === "hcm") return displayFlags(tgt, typed);
     const sc = scoreWordsEx(tgt, typed);
     const E = wordTokens(tgt), G = wordTokens(typed);
     const flags = new Array(tgt.length).fill(null);
-    /* char offsets of typed words */
-    const gOff = [];
-    { let m, re = /\S+/g; while ((m = re.exec(typed))) gOff.push(m.index); }
     for (const p of sc.pairs) {
-      if (p.gj < 0 || p.ei < 0) continue;
-      const gw = G[p.gj], ew = E[p.ei], base = gOff[p.gj];
-      if (base == null) continue;
-      if (p.kind === "ok") { for (let k = 0; k < gw.length; k++) flags[base + k] = true; }
-      else if (p.kind === "extra") { for (let k = 0; k < gw.length; k++) flags[base + k] = false; }
-      else if (p.kind === "wrong" || p.kind === "half") {
-        for (let k = 0; k < gw.length; k++) flags[base + k] = (k < ew.length && gw[k] === ew[k]);
+      if (p.ei < 0) continue;
+      const eTok = E[p.ei];
+      if (!eTok) continue;
+      const ew = eTok.w, base = eTok.s;
+      if (p.gj < 0) {
+        for (let k = 0; k < ew.length; k++) flags[base + k] = false;
+        continue;
       }
-      /* spacing pairs: leave uncoloured (the join/split is positional) */
+      const gTok = G[p.gj];
+      const gw = gTok ? gTok.w : "";
+      if (p.kind === "ok") {
+        const lim = p.gj === G.length - 1 ? Math.min(ew.length, gw.length) : ew.length;
+        for (let k = 0; k < lim; k++) flags[base + k] = true;
+      } else if (p.kind === "wrong" || p.kind === "half") {
+        const isLast = p.gj === G.length - 1;
+        const lim = isLast ? Math.min(ew.length, gw.length) : ew.length;
+        for (let k = 0; k < lim; k++) flags[base + k] = (k < gw.length && gw[k] === ew[k]);
+      } else if (p.kind === "spacing") {
+        for (let k = 0; k < ew.length; k++) flags[base + k] = false;
+      }
     }
     return flags;
   }
