@@ -10,7 +10,7 @@ import { esc, icon } from "../core/util.js";
 function bestEntry(testId) {
   try {
     const b = store.bestFor(testId);
-    if (b && typeof b === "object" && b.net != null) return b;
+    if (b && typeof b === "object" && !b.incomplete && b.net != null) return b;
     if (typeof b === "number") return { net: b, qualified: null };
   } catch (e) {}
   return null;
@@ -18,10 +18,11 @@ function bestEntry(testId) {
 
 function examSummary(hist, examId) {
   const mine = hist.filter((h) => (examId === "hcm" ? (!h.examId || h.examId === "hcm") : h.examId === examId) && h.mode === "mock");
-  const triedIds = new Set(mine.map((h) => h.testId).filter(Boolean));
-  const passedIds = new Set(mine.filter((h) => h.qualified).map((h) => h.testId).filter(Boolean));
-  const best = mine.length ? Math.max(...mine.map((h) => Math.round(h.net || 0))) : null;
-  return { done: mine.length, tried: triedIds.size, passed: passedIds.size, best };
+  const complete = mine.filter((h) => !h.incomplete);
+  const triedIds = new Set(complete.map((h) => h.testId).filter(Boolean));
+  const passedIds = new Set(complete.filter((h) => h.qualified).map((h) => h.testId).filter(Boolean));
+  const best = complete.length ? Math.max(...complete.map((h) => Math.round(h.net || 0))) : null;
+  return { done: complete.length, tried: triedIds.size, passed: passedIds.size, best };
 }
 
 /* ——— Arena index ——— */
@@ -291,7 +292,7 @@ export async function renderHub(view, examId) {
   const nextUntried = untriedPool[0] || tests[0];
   if (quickBtn && nextUntried) {
     quickBtn.disabled = false;
-    quickBtn.innerHTML = `${icon("play", 15)} <span>${untriedPool.length ? `Next Not Attempted (#${nextUntried.num})` : `Retake #${nextUntried.num}`}</span>`;
+    quickBtn.innerHTML = `${icon("play", 15)} <span>${untriedPool.length ? `Next Mock (#${nextUntried.num})` : `Retake #${nextUntried.num}`}</span>`;
     quickBtn.addEventListener("click", () => startMock(nextUntried));
   }
   if (randBtn && tests.length) {

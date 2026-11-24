@@ -36,6 +36,7 @@ function modeLabel(e) {
 }
 
 function verdictBadge(e) {
+  if (e.incomplete) return `<span class="badge">Incomplete</span>`;
   if (e.mode !== "mock" && e.mode !== "custom") return "";
   if (e.qualified == null) return "";
   return e.qualified
@@ -239,7 +240,7 @@ export function renderProgress(view) {
         <div class="readout"><span class="readout-value num" style="font-size:1.7rem">${Number(e.acc || 0).toFixed(1)}<span class="unit">%</span></span><span class="label">Accuracy</span></div>
         <div class="readout"><span class="readout-value num" style="font-size:1.7rem">${mistakeCount}</span><span class="label">Mistakes</span></div>
         ${e.errorPct != null ? `<div class="readout"><span class="readout-value num" style="font-size:1.7rem">${e.errorPct}<span class="unit">%</span></span><span class="label">Error %</span></div>` : ""}
-        ${e.examId === "hcm" && e.marks != null ? `<div class="readout"><span class="readout-value num" style="font-size:1.7rem">${e.marks}<span class="unit">/25</span></span><span class="label">Marks</span></div>` : ""}
+        ${!e.incomplete && e.examId === "hcm" && e.marks != null ? `<div class="readout"><span class="readout-value num" style="font-size:1.7rem">${e.marks}<span class="unit">/25</span></span><span class="label">Marks</span></div>` : ""}
         <div class="readout"><span class="readout-value num" style="font-size:1.7rem">${e.chars ?? 0}</span><span class="label">Keystrokes</span></div>
         <div class="readout"><span class="readout-value num" style="font-size:1.7rem">${e.bs ?? 0}</span><span class="label">Backspaces</span></div>
         <div class="readout"><span class="readout-value num" style="font-size:1.7rem">${Math.round((e.durSec || 0) / 6) / 10}<span class="unit">min</span></span><span class="label">Time used</span></div>
@@ -265,7 +266,8 @@ export function renderProgress(view) {
     const last10 = rows.slice(0, 10);
     const avgNet = last10.length ? Math.round(last10.reduce((s, h) => s + (h.net || 0), 0) / last10.length) : 0;
     const avgAcc = last10.length ? (last10.reduce((s, h) => s + (h.acc || 0), 0) / last10.length).toFixed(1) : "0.0";
-    const bestNet = rows.length ? Math.max(...rows.map((h) => Math.round(h.net || 0))) : 0;
+    const completeRows = rows.filter((h) => !h.incomplete);
+    const bestNet = completeRows.length ? Math.max(...completeRows.map((h) => Math.round(h.net || 0))) : 0;
 
     summaryHost.innerHTML = `
     <div class="hub-spec" role="list" aria-label="Your totals">
@@ -296,7 +298,7 @@ export function renderProgress(view) {
       ${verdictBadge(e)}
       <span class="hist-nums">
         <span class="hn-net num">${Math.round(e.net || 0)}</span>
-        <span class="hn-sub" style="display:block">net · ${Number(e.acc || 0).toFixed(1)}% acc${e.marks != null && (e.mode === "mock" || e.mode === "custom") && e.examId === "hcm" ? ` · ${e.marks}/25` : ""}</span>
+        <span class="hn-sub" style="display:block">net · ${Number(e.acc || 0).toFixed(1)}% acc${!e.incomplete && e.marks != null && (e.mode === "mock" || e.mode === "custom") && e.examId === "hcm" ? ` · ${e.marks}/25` : ""}</span>
       </span>
     </button>`).join("");
 

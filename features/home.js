@@ -568,8 +568,9 @@ function calcStreak(hist) {
 function examBest(hist, examId) {
   const mine = hist.filter((h) => (examId === "hcm" ? (!h.examId || h.examId === "hcm") : h.examId === examId));
   const mocks = mine.filter((h) => h.mode === "mock");
-  const passed = mocks.filter((h) => h.qualified).length;
-  const bestNet = mine.length ? Math.max(...mine.map((h) => Math.round(h.net || 0))) : null;
+  const complete = mine.filter((h) => !h.incomplete);
+  const passed = mocks.filter((h) => h.qualified && !h.incomplete).length;
+  const bestNet = complete.length ? Math.max(...complete.map((h) => Math.round(h.net || 0))) : null;
   const triedIds = new Set(mocks.map((h) => h.testId).filter(Boolean));
   return { count: mine.length, mocksTried: triedIds.size, passed, bestNet };
 }

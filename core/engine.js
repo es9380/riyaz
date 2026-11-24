@@ -109,6 +109,8 @@ header,nav{transition:opacity .3s ease}
 .ts-verdict-hero.pass{border-color:color-mix(in srgb,var(--ok,#3ddc97) 55%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--ok,#3ddc97) 18%,transparent),transparent 70%),var(--surface,#15171C)}
 .ts-verdict-hero.fail{border-color:color-mix(in srgb,var(--error,#ff6b7a) 45%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--error,#ff6b7a) 13%,transparent),transparent 70%),var(--surface,#15171C)}
 .ts-verdict-hero.prac{border-color:color-mix(in srgb,var(--accent,#ffb020) 45%,var(--line));background:radial-gradient(600px 260px at 10% 0%,color-mix(in srgb,var(--accent,#ffb020) 15%,transparent),transparent 70%),var(--surface,#15171C)}
+.ts-verdict-hero.incomplete{border-color:color-mix(in srgb,var(--line-strong,var(--line,#2A2C33)) 90%,transparent);background:var(--surface,#15171C)}
+.ts-incomplete-lbl{margin:0;font-size:15.5px;font-weight:650;color:var(--ink,#E8E6DF);max-width:60ch;line-height:1.45}
 .ts-vh-main{display:grid;gap:8px;min-width:220px;flex:1}
 .ts-vh-badges{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .ts-stamp{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-display,system-ui,sans-serif);font-size:17px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border:2.5px solid currentColor;outline:1.5px solid currentColor;outline-offset:2px;border-radius:4px;padding:6px 13px;transform:rotate(-2deg);white-space:nowrap;animation:ts-stamp-in .45s cubic-bezier(.22,.9,.3,1) both}
@@ -1145,10 +1147,10 @@ class Stage {
       const elapsed = (performance.now() - this.startT) / 1000;
       if (this.isExam) {
         this.tickPill();
-        if (elapsed >= this.durationMin * 60) { this.finish(); return; }
+        if (elapsed >= this.durationMin * 60) { this.finish(true); return; }
       } else {
         this.renderStats();
-        if (this.mode === "warmup" && elapsed >= this.durationMin * 60) { this.finish(); return; }
+        if (this.mode === "warmup" && elapsed >= this.durationMin * 60) { this.finish(true); return; }
       }
     };
     step();
@@ -1204,7 +1206,7 @@ class Stage {
     return this.started ? (performance.now() - this.startT) / 1000 : 0;
   }
 
-  finish() {
+  finish(fromTimer = false) {
     if (this.finished || this.destroyed) return;
     this.finished = true;
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
@@ -1213,6 +1215,10 @@ class Stage {
     const typed = this.typed;
     const durSec = Math.round(elapsed);
     const prevBest = this.testId ? store.bestFor(this.testId) : null;
+    const fullPassage = typed.trimEnd().length >= this.baseText.trimEnd().length && this.baseText.trimEnd().length > 0;
+    const fullTime = !!fromTimer || (this.started && elapsed >= this.durationMin * 60 - 0.5);
+    const gatedIncomplete = this.isExam && (this.family === "hcm" || this.family === "e2") && !(fullPassage || fullTime);
+    const INCOMPLETE_MSG = "Incomplete attempt — qualification and marks apply only when the full passage is typed or the full time runs out.";
     let entry, resultHtml;
 
     if (this.family === "hcm") {
@@ -1220,25 +1226,33 @@ class Stage {
       entry = {
         examId: this.examId, mode: this.mode, name: this.title, testId: this.testId,
         gross: sc.grossR, net: sc.netR, acc: sc.accR, errs: sc.errs,
-        marks: sc.marks, qualified: sc.qualified, durSec, min: this.durationMin,
+        marks: gatedIncomplete ? null : sc.marks,
+        qualified: gatedIncomplete ? false : sc.qualified,
+        incomplete: gatedIncomplete || undefined,
+        durSec, min: this.durationMin,
         chars: typed.length, words: sc.words, bs: this.bsCount,
         errCat: sc.errCat, weakKeys: sc.weakKeys, weakWords: sc.weakWords,
         mistakeDetail: sc.mistakeDetail, full: sc.errs, half: 0,
         errorPct: sc.words ? +(sc.errs / sc.words * 100).toFixed(1) : 0,
-        verdict: sc.qualified ? "Qualified" : "Not qualified",
+        verdict: gatedIncomplete ? INCOMPLETE_MSG : (sc.qualified ? "Qualified" : "Not qualified"),
       };
-      this.isNewBest = entry.net > 0 && (!prevBest || entry.net > prevBest.net);
+      this.isNewBest = !gatedIncomplete && entry.net > 0 && (!prevBest || entry.net > prevBest.net);
       resultHtml = this.isExam ? this.examResultHcm(sc, entry) : this.practiceResult(sc, entry);
     } else {
       const tgt = this.family === "e2" ? cycleTarget(this.baseText, typed.length) : this.baseText;
       const sc = scoreExam(this.spec, tgt, typed, elapsed, this.category);
       const catObj = this.spec && this.spec.categories
         ? this.spec.categories.find((c) => c.id === sc.category) : null;
-      const verdict = (sc.qualified ? "Qualified" : "Not qualified") + " — " + sc.reason;
+      const verdict = gatedIncomplete
+        ? INCOMPLETE_MSG
+        : (sc.qualified ? "Qualified" : "Not qualified") + " — " + sc.reason;
       entry = {
         examId: this.examId, mode: this.mode, name: this.title, testId: this.testId,
         gross: sc.grossR, net: sc.netR, acc: sc.accR, errs: sc.errs,
-        marks: 0, qualified: sc.qualified, durSec, min: this.durationMin,
+        marks: 0,
+        qualified: gatedIncomplete ? false : sc.qualified,
+        incomplete: gatedIncomplete || undefined,
+        durSec, min: this.durationMin,
         chars: typed.length, words: sc.words, bs: this.bsCount,
         errCat: { spelling: 0, capital: 0, punct: 0, spacing: 0, skipped: 0, extra: 0 },
         weakKeys: {}, weakWords: {},
@@ -1248,7 +1262,7 @@ class Stage {
         finalMistakes: sc.finalMistakes, allowance: sc.allowance,
         breakdown: sc.breakdown, completion: sc.completion,
       };
-      this.isNewBest = entry.net > 0 && (!prevBest || entry.net > prevBest.net);
+      this.isNewBest = !gatedIncomplete && entry.net > 0 && (!prevBest || entry.net > prevBest.net);
       resultHtml = this.examResultEx(sc, entry, verdict);
     }
 
@@ -1332,30 +1346,38 @@ class Stage {
   }
 
   examResultHcm(sc, e) {
+    const inc = !!e.incomplete;
     const band = hcmBandLabel(e.net);
-    const verdict = sc.qualified
-      ? e.marks + " of 25 marks · " + band
-      : "Net speed " + e.net + " WPM — 30 WPM needed to qualify";
+    const verdict = inc
+      ? "Incomplete attempt — qualification and marks apply only when the full passage is typed or the full time runs out."
+      : sc.qualified
+        ? e.marks + " of 25 marks · " + band
+        : "Net speed " + e.net + " WPM — 30 WPM needed to qualify";
     const cats = [["Spelling", sc.errCat.spelling], ["Capitalisation", sc.errCat.capital], ["Punctuation", sc.errCat.punct],
       ["Spacing", sc.errCat.spacing], ["Word skipped", sc.errCat.skipped], ["Extra word", sc.errCat.extra]]
       .filter(([, n]) => n > 0);
     const weakK = Object.keys(sc.weakKeys).sort((a, b) => sc.weakKeys[b] - sc.weakKeys[a]).slice(0, 6);
     const weakW = Object.keys(sc.weakWords).sort((a, b) => sc.weakWords[b] - sc.weakWords[a]).slice(0, 6);
-    let html = '<div class="ts-verdict-hero ' + (sc.qualified ? "pass" : "fail") + '">' +
-      (sc.qualified ? this.confettiHtml() : "") +
+    const heroCls = inc ? "incomplete" : (sc.qualified ? "pass" : "fail");
+    let html = '<div class="ts-verdict-hero ' + heroCls + '">' +
+      (!inc && sc.qualified ? this.confettiHtml() : "") +
       '<div class="ts-vh-main">' +
-        '<div class="ts-vh-badges">' +
+        (inc ? "" : '<div class="ts-vh-badges">' +
           '<span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' + (sc.qualified ? "✓ QUALIFIED" : "BELOW THE BAR") + "</span>" +
           (this.isNewBest ? '<span class="ts-best-pill">★ New Personal Best</span>' : "") +
-        "</div>" +
-        '<p class="ts-vh-sub">' + esc(verdict) + "</p>" +
+        "</div>") +
+        '<p class="' + (inc ? "ts-incomplete-lbl" : "ts-vh-sub") + '">' + esc(verdict) + "</p>" +
         '<p class="ts-vh-meta">' + esc(this.title) + " · " + fmtTime(e.durSec) + " used</p>" +
       "</div></div>";
-    html += this.heroStatsHtml(e.net, "WPM net", "Net Speed", "Gross " + e.gross + " WPM · Target 30+ WPM", e.acc);
-    html += this.tilesHtml([
+    html += this.heroStatsHtml(e.net, "WPM net", "Net Speed", inc ? "Gross " + e.gross + " WPM" : "Gross " + e.gross + " WPM · Target 30+ WPM", e.acc);
+    const hcmTiles = inc ? [
+      [e.gross + "", "Gross WPM"], [e.errs + "", "Mistakes"],
+      [e.words + "", "Words typed"], [e.bs + "", "Backspaces"], [fmtTime(e.durSec), "Time used"],
+    ] : [
       [e.marks + " / 25", "Marks"], [e.gross + "", "Gross WPM"], [e.errs + "", "Mistakes"],
       [e.words + "", "Words typed"], [e.bs + "", "Backspaces"], [fmtTime(e.durSec), "Time used"],
-    ]);
+    ];
+    html += this.tilesHtml(hcmTiles);
     html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
     if (weakK.length || weakW.length) {
@@ -1369,13 +1391,15 @@ class Stage {
       "<li>Gross speed = W ÷ minutes = <b>" + e.gross + " WPM</b></li>" +
       "<li>Mistakes M = <b>" + e.errs + "</b> (Delhi Police counts full mistakes only)</li>" +
       "<li>Accuracy = (W − M) ÷ W = <b>" + e.acc + "%</b></li>" +
-      "<li>Net speed = (W − 10 × M) ÷ minutes = <b>" + e.net + " WPM</b> → " + esc(band) + "</li></ol></details>";
+      "<li>Net speed = (W − 10 × M) ÷ minutes = <b>" + e.net + " WPM</b>" + (inc ? " (incomplete attempt — marks and qualification not awarded)" : " → " + esc(band)) + "</li></ol></details>";
     html += this.actionsHtml(e.errs);
     return html;
   }
 
   examResultEx(sc, e, verdict) {
+    const inc = !!e.incomplete;
     const isE2 = sc.engine === "E2";
+    const endLine = inc ? "Incomplete attempt — qualification and marks not awarded." : (sc.reason + ".");
     const calc = isE2 ? [
       "Words typed W = keystrokes ÷ 5 = " + sc.chars + " ÷ 5 = " + sc.words,
       "Mistakes M = full " + sc.full + " + ½ × half " + sc.half + " = " + sc.weighted,
@@ -1383,29 +1407,30 @@ class Stage {
       "Counted mistakes = max(0, M − allowance) = " + sc.finalMistakesR,
       "Gross speed = W ÷ minutes = " + sc.grossR + " WPM",
       "Net speed = (W − 10 × counted) ÷ minutes = " + sc.netR + " WPM",
-      sc.reason + ".",
+      endLine,
     ] : [
       "Words typed W = keystrokes ÷ 5 = " + sc.chars + " ÷ 5 = " + sc.words,
       "Mistakes M = full " + sc.full + " + ½ × half " + sc.half + " = " + sc.weighted,
       "Error % = M ÷ W × 100 = " + sc.errorPctR + "%",
       "Gross speed = W ÷ minutes = " + sc.grossR + " WPM — for SSC the net shown is the gross speed",
-      sc.reason + ".",
+      endLine,
     ];
-    let html = '<div class="ts-verdict-hero ' + (sc.qualified ? "pass" : "fail") + '">' +
-      (sc.qualified ? this.confettiHtml() : "") +
+    const heroCls = inc ? "incomplete" : (sc.qualified ? "pass" : "fail");
+    let html = '<div class="ts-verdict-hero ' + heroCls + '">' +
+      (!inc && sc.qualified ? this.confettiHtml() : "") +
       '<div class="ts-vh-main">' +
-        '<div class="ts-vh-badges">' +
+        (inc ? "" : '<div class="ts-vh-badges">' +
           '<span class="ts-stamp ' + (sc.qualified ? "good" : "bad") + '">' + (sc.qualified ? "✓ QUALIFIED" : "BELOW THE BAR") + "</span>" +
           (this.isNewBest ? '<span class="ts-best-pill">★ New Personal Best</span>' : "") +
-        "</div>" +
-        '<p class="ts-vh-sub">' + esc(sc.reason) + ".</p>" +
+        "</div>") +
+        '<p class="' + (inc ? "ts-incomplete-lbl" : "ts-vh-sub") + '">' + esc(inc ? verdict : (sc.reason + ".")) + "</p>" +
         '<p class="ts-vh-meta">' + esc(this.title) + (e.category ? " · " + esc(e.category) : "") + " · " + fmtTime(e.durSec) + " used</p>" +
       "</div></div>";
     html += this.heroStatsHtml(
       e.net,
       isE2 ? "WPM net" : "WPM",
       isE2 ? "Net Speed" : "Gross / Net Speed",
-      isE2 ? "Gross " + e.gross + " WPM · Target 30+ WPM" : "Error " + e.errorPct + "% (Cap " + sc.cap + "%)",
+      isE2 ? (inc ? "Gross " + e.gross + " WPM" : "Gross " + e.gross + " WPM · Target 30+ WPM") : "Error " + e.errorPct + "% (Cap " + sc.cap + "%)",
       e.acc
     );
     html += this.tilesHtml([

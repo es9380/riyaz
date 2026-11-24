@@ -115,6 +115,7 @@ export function bestFor(testId) {
   if (!testId) return null;
   let best = null;
   history().forEach(function (x) {
+    if (x.incomplete) return;
     if (x.testId !== testId || typeof x.net !== "number") return;
     if (!best || x.net > best.net) best = x;
   });
