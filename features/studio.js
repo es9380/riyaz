@@ -1,5 +1,5 @@
-/* Riyaz — Training Studio: warm-up sets, drills by part, and a
-   revision set built from your own weak words. Content loads lazily. */
+/* Riyaz — Drills & Warm-ups: revision set from mistakes, collapsible
+   warm-up sets (all subsets starting from Subset 1), and collapsible drill parts. */
 
 import { launchStage } from "../app.js";
 import * as store from "../core/store.js";
@@ -63,6 +63,14 @@ function buildBestByTest(hist) {
   return map;
 }
 
+function groupLevel(items, diffMap) {
+  if (!diffMap || !items.length) return "";
+  const levels = new Set(items.map((d) => diffMap[d.id]).filter(Boolean));
+  if (levels.size === 1) return [...levels][0];
+  if (levels.size > 1) return "mixed";
+  return "";
+}
+
 export async function renderStudio(view) {
   const hist = store.history();
   const weakWords = weakWordCounts(hist);
@@ -73,37 +81,32 @@ export async function renderStudio(view) {
   view.innerHTML = `
   <section class="page-head">
     <h1>Drills &amp; Warm-ups</h1>
-    <p class="lede">Master keys, weak words, punctuation, and exam vocabulary.</p>
+    <p class="lede">Master weak words, warm-ups, finger patterns, and exam vocabulary.</p>
   </section>
 
-  <section class="section" aria-labelledby="revH" style="margin-top:24px">
+  ${revWords.length ? `
+  <section class="section" aria-labelledby="revH" style="margin-top:20px">
     <div class="section-head">
       <h2 id="revH">${icon("bolt", 18)} Practise Your Mistakes</h2>
-      ${revWords.length ? `<span class="aside">${revWords.length} weak word${revWords.length === 1 ? "" : "s"} queued</span>` : ""}
+      <span class="aside">${revWords.length} weak word${revWords.length === 1 ? "" : "s"} queued</span>
     </div>
-    ${revWords.length ? `
-      <div class="rev-card">
-        <div class="word-chips" aria-label="Weak words in your revision set">
-          ${revWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}
+    <div class="rev-card">
+      <div class="word-chips" aria-label="Weak words in your revision set">
+        ${revWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}
+      </div>
+      ${weakKeys.length ? `<div class="weak-keys" aria-label="Your weakest keys">
+        ${weakKeys.map((k) => `<span class="key-chip">${esc(k.key === " " ? "space" : k.key)}${k.count != null ? `<b>×${k.count}</b>` : ""}</span>`).join("")}
+      </div>` : ""}
+      <div class="rev-actions">
+        <div class="seg" role="group" aria-label="Revision duration" id="revDurSeg">
+          ${[3, 5, 10].map((m) => `<button type="button" data-revdur="${m}" aria-pressed="${m === 5}">${m}m</button>`).join("")}
         </div>
-        ${weakKeys.length ? `<div class="weak-keys" aria-label="Your weakest keys">
-          ${weakKeys.map((k) => `<span class="key-chip">${esc(k.key === " " ? "space" : k.key)}${k.count != null ? `<b>×${k.count}</b>` : ""}</span>`).join("")}
-        </div>` : ""}
-        <div class="rev-actions">
-          <div class="seg" role="group" aria-label="Revision duration" id="revDurSeg">
-            ${[3, 5, 10].map((m) => `<button type="button" data-revdur="${m}" aria-pressed="${m === 5}">${m}m</button>`).join("")}
-          </div>
-          <button class="btn btn-primary" id="revStart" type="button">${icon("play", 15)} <span>Practise ${revWords.length} Weak Word${revWords.length === 1 ? "" : "s"}</span></button>
-        </div>
-      </div>`
-    : `
-      <div class="empty-note">
-        <p><strong>No missed words yet.</strong> Finish any mock and your weak words appear here automatically.</p>
-        <a class="btn" href="#/arena">${icon("target", 15)} <span>Go to Exams</span></a>
-      </div>`}
-  </section>
+        <button class="btn btn-primary" id="revStart" type="button">${icon("play", 15)} <span>Practise ${revWords.length} Weak Word${revWords.length === 1 ? "" : "s"}</span></button>
+      </div>
+    </div>
+  </section>` : ""}
 
-  <div id="studioBody"><p style="color:var(--ink-3);margin-top:34px">Loading drills…</p></div>`;
+  <div id="studioBody"><p style="color:var(--ink-3);margin-top:28px">Loading drills…</p></div>`;
 
   let revDur = 5;
   view.querySelectorAll("#revDurSeg [data-revdur]").forEach((btn) => {
@@ -155,25 +158,25 @@ export async function renderStudio(view) {
     </div>
     <div class="mini-meter" aria-hidden="true"><i class="fill-ok" style="width:${masteryPct}%"></i></div>
   </div>
-  <div class="mock-tools" style="margin-top:20px">
+  <div class="mock-tools" style="margin-top:18px">
     <div class="seg" role="group" aria-label="Filter studio sections" id="studioSecSeg">
       <button type="button" data-sec="all" aria-pressed="true">All</button>
       <button type="button" data-sec="warmups" aria-pressed="false">Warm-ups (${WARMUPS.length})</button>
       <button type="button" data-sec="vocab" aria-pressed="false">Vocabulary</button>
-      <button type="button" data-sec="drills" aria-pressed="false">All Drills (${totalDrills})</button>
+      <button type="button" data-sec="drills" aria-pressed="false">Drills (${totalDrills})</button>
     </div>
-    <input class="search-input" id="studioSearch" type="search" placeholder="Search drills or vocab…" aria-label="Filter warm-ups or drills" />
+    <input class="search-input" id="studioSearch" type="search" placeholder="Search drills, sets or vocab…" aria-label="Search warm-ups or drills" />
   </div>
   <div id="studioList"></div>`;
 
   const listHost = body.querySelector("#studioList");
   const searchEl = body.querySelector("#studioSearch");
   let sectionFilter = "all";
-  let drillPartFilter = "all";
   let query = "";
+  const openBlocks = new Set();
 
   const allSubsets = {};
-  WARMUPS.forEach((set) => (set.subsets || []).forEach((s) => { allSubsets[s.id] = { ...s, setName: set.name }; }));
+  WARMUPS.forEach((set) => (set.subsets || []).forEach((s) => { allSubsets[`${set.id}::${s.id}`] = { ...s, setName: set.name }; }));
 
   function scoreBadge(id) {
     const b = bestByTest[id];
@@ -183,6 +186,7 @@ export async function renderStudio(view) {
 
   function paintStudio() {
     const q = query.trim().toLowerCase();
+    const forceExpand = !!q || sectionFilter === "vocab";
     const showWarmups = sectionFilter === "all" || sectionFilter === "warmups";
     const showDrills = sectionFilter === "all" || sectionFilter === "drills" || sectionFilter === "vocab";
     const vocabIndex = DRILLS.findIndex((p) => /vocab/i.test(p.part));
@@ -191,7 +195,7 @@ export async function renderStudio(view) {
     if (showWarmups) {
       const filteredSets = WARMUPS.map((set) => {
         const setMatches = !q || `${set.name} ${set.desc || ""} ${set.level}`.toLowerCase().includes(q);
-        const subs = (set.subsets || []).slice(1).filter((sub) =>
+        const subs = (set.subsets || []).filter((sub) =>
           !q || setMatches || `subset ${sub.n} ${sub.topic || ""}`.toLowerCase().includes(q)
         );
         if (!setMatches && !subs.length) return null;
@@ -200,95 +204,133 @@ export async function renderStudio(view) {
 
       if (filteredSets.length) {
         wuHtml = `
-        <section class="section" aria-labelledby="wuH">
+        <section class="section" aria-labelledby="wuH" style="margin-top:26px">
           <div class="section-head">
             <h2 id="wuH">${icon("flame", 18)} Warm-ups</h2>
-            <span class="aside">15-min full sets or 5-min subsets</span>
+            <span class="aside">${filteredSets.length} sets · click to expand subsets</span>
           </div>
-          ${filteredSets.map(({ set, subs }) => `
-          <div class="set-block">
-            <div class="set-head">
-              <span class="set-name">${esc(set.name)}</span>
-              <span class="chip chip-${esc(set.level)}">${esc(set.level)}</span>
-              ${scoreBadge(set.id)}
-              <span class="set-desc">${esc(set.desc || "")}</span>
-              <button class="btn" type="button" data-set="${esc(set.id)}">${icon("play", 13)} Full · 15m</button>
-            </div>
-            ${subs.length ? `<div class="subset-rows">
-              ${subs.map((sub) => `
-              <button type="button" class="item-row" data-subset="${esc(sub.id)}" data-setid="${esc(set.id)}">
-                <span>
-                  <span class="ir-name">Subset ${sub.n} — ${esc(sub.topic || "Practice")}</span>
-                  <span class="ir-desc" style="display:block">${sub.text.split(/\s+/).filter(Boolean).length} words</span>
-                </span>
-                <span style="display:flex;gap:10px;align-items:center">
-                  ${scoreBadge(sub.id)}
-                  <span class="mock-go">${icon("play", 13)} Start</span>
-                </span>
-              </button>`).join("")}
-            </div>` : ""}
-          </div>`).join("")}
+          <div class="acc-list">
+            ${filteredSets.map(({ set, subs }) => {
+              const blockKey = `wu-${set.id}`;
+              const isOpen = forceExpand || openBlocks.has(blockKey);
+              return `
+              <div class="acc-block${isOpen ? " open" : ""}" data-block="${esc(blockKey)}">
+                <div class="acc-head">
+                  <button type="button" class="acc-toggle" aria-expanded="${isOpen}" aria-controls="panel-${esc(blockKey)}">
+                    <span class="acc-chev" aria-hidden="true">›</span>
+                    <span class="acc-title-wrap">
+                      <span class="acc-name">${esc(set.name)}</span>
+                      ${set.desc ? `<span class="acc-desc">${esc(set.desc)}</span>` : ""}
+                    </span>
+                    <span class="acc-meta">
+                      ${scoreBadge(set.id)}
+                      <span class="chip chip-${esc(set.level)}">${esc(set.level)}</span>
+                      <span class="acc-count num">${subs.length} subset${subs.length === 1 ? "" : "s"}</span>
+                    </span>
+                  </button>
+                  <button class="btn acc-action" type="button" data-set="${esc(set.id)}">${icon("play", 13)} Full · 15m</button>
+                </div>
+                <div class="acc-body" id="panel-${esc(blockKey)}">
+                  <div class="acc-inner">
+                    <div class="acc-rows">
+                      ${subs.map((sub) => `
+                      <button type="button" class="item-row" data-subkey="${esc(set.id)}::${esc(sub.id)}">
+                        <span>
+                          <span class="ir-name">Subset ${sub.n} — ${esc(sub.topic || "Practice")}</span>
+                          <span class="ir-desc" style="display:block">${sub.text.split(/\s+/).filter(Boolean).length} words</span>
+                        </span>
+                        <span style="display:flex;gap:10px;align-items:center">
+                          ${scoreBadge(sub.id)}
+                          <span class="mock-go">${icon("play", 13)} Start</span>
+                        </span>
+                      </button>`).join("")}
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+            }).join("")}
+          </div>
         </section>`;
       }
     }
 
     let drillHtml = "";
     if (showDrills) {
-      const activePart = sectionFilter === "vocab" && vocabIndex >= 0 ? String(vocabIndex) : drillPartFilter;
       const filteredParts = DRILLS.map((part, idx) => {
-        if (activePart !== "all" && String(idx) !== activePart) return null;
+        if (sectionFilter === "vocab" && vocabIndex >= 0 && idx !== vocabIndex) return null;
         const partMatches = !q || part.part.toLowerCase().includes(q);
         const items = part.items.filter((d) =>
           !q || partMatches || `${d.name} ${d.desc || ""}`.toLowerCase().includes(q)
         );
         if (!items.length) return null;
-        return { part: part.part, items };
+        return { part: part.part, idx, items };
       }).filter(Boolean);
-
-      const partTabs = sectionFilter === "vocab" ? "" : `
-      <div class="part-chips" role="group" aria-label="Drill parts" id="drillPartSeg">
-        <button type="button" class="chip-btn" data-part="all" aria-pressed="${drillPartFilter === "all"}">All parts</button>
-        ${DRILLS.map((p, idx) => {
-          const shortName = p.part.replace(/^Part \d+\s*·\s*/, "");
-          return `<button type="button" class="chip-btn" data-part="${idx}" aria-pressed="${drillPartFilter === String(idx)}">${esc(shortName)}</button>`;
-        }).join("")}
-      </div>`;
 
       const shownCount = filteredParts.reduce((n, p) => n + p.items.length, 0);
       drillHtml = `
-      <section class="section" aria-labelledby="drillH">
+      <section class="section" aria-labelledby="drillH" style="margin-top:32px">
         <div class="section-head">
           <h2 id="drillH">${icon("keyboard", 18)} ${sectionFilter === "vocab" ? "Vocabulary Drills" : "Skill Drills"}</h2>
           <span class="aside">${shownCount} drill${shownCount === 1 ? "" : "s"} · 5 min each</span>
         </div>
-        ${partTabs}
-        ${filteredParts.length ? filteredParts.map((part) => `
-        <div class="studio-group">
-          <h3>${esc(part.part)}</h3>
-          <div class="item-rows">
-            ${part.items.map((d) => `
-            <button type="button" class="item-row" data-drill="${esc(d.id)}">
-              <span>
-                <span class="ir-name">${esc(d.name)}</span>
-                ${d.desc ? `<span class="ir-desc" style="display:block">${esc(d.desc)}</span>` : ""}
-              </span>
-              <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-                ${scoreBadge(d.id)}
-                ${DIFF && DIFF[d.id] ? `<span class="chip chip-${esc(DIFF[d.id])}">${esc(DIFF[d.id])}</span>` : ""}
-                <span class="mock-go">${icon("play", 13)} Start</span>
-              </span>
-            </button>`).join("")}
-          </div>
-        </div>`).join("") : `<div class="empty-note" style="margin-top:16px"><p>No matching drills.</p></div>`}
+        ${filteredParts.length ? `<div class="acc-list">
+          ${filteredParts.map((part) => {
+            const blockKey = `drill-${part.idx}`;
+            const isOpen = forceExpand || openBlocks.has(blockKey);
+            const lvl = groupLevel(part.items, DIFF);
+            const partMastered = part.items.filter((d) => bestByTest[d.id]?.mastered).length;
+            return `
+            <div class="acc-block${isOpen ? " open" : ""}" data-block="${esc(blockKey)}">
+              <div class="acc-head">
+                <button type="button" class="acc-toggle" aria-expanded="${isOpen}" aria-controls="panel-${esc(blockKey)}">
+                  <span class="acc-chev" aria-hidden="true">›</span>
+                  <span class="acc-title-wrap">
+                    <span class="acc-name">${esc(part.part)}</span>
+                  </span>
+                  <span class="acc-meta">
+                    ${partMastered ? `<span class="studio-score num"><span class="tick-ok">✓ ${partMastered}/${part.items.length}</span></span>` : ""}
+                    ${lvl ? `<span class="chip chip-${esc(lvl)}">${esc(lvl)}</span>` : ""}
+                    <span class="acc-count num">${part.items.length} drill${part.items.length === 1 ? "" : "s"}</span>
+                  </span>
+                </button>
+              </div>
+              <div class="acc-body" id="panel-${esc(blockKey)}">
+                <div class="acc-inner">
+                  <div class="acc-rows">
+                    ${part.items.map((d) => `
+                    <button type="button" class="item-row" data-drill="${esc(d.id)}">
+                      <span>
+                        <span class="ir-name">${esc(d.name)}</span>
+                        ${d.desc ? `<span class="ir-desc" style="display:block">${esc(d.desc)}</span>` : ""}
+                      </span>
+                      <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+                        ${scoreBadge(d.id)}
+                        ${DIFF && DIFF[d.id] ? `<span class="chip chip-${esc(DIFF[d.id])}">${esc(DIFF[d.id])}</span>` : ""}
+                        <span class="mock-go">${icon("play", 13)} Start</span>
+                      </span>
+                    </button>`).join("")}
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>` : `<div class="empty-note" style="margin-top:16px"><p>No matching drills.</p></div>`}
       </section>`;
     }
 
     listHost.innerHTML = (wuHtml + drillHtml) || `<div class="empty-note" style="margin-top:20px"><p>No matching items.</p></div>`;
 
-    listHost.querySelectorAll("#drillPartSeg [data-part]").forEach((btn) => {
+    /* Smooth accordion toggle in-place without destroying DOM transition */
+    listHost.querySelectorAll(".acc-toggle").forEach((btn) => {
       btn.addEventListener("click", () => {
-        drillPartFilter = btn.dataset.part;
-        paintStudio();
+        const block = btn.closest(".acc-block");
+        if (!block) return;
+        const key = block.dataset.block;
+        const nextOpen = !block.classList.contains("open");
+        block.classList.toggle("open", nextOpen);
+        btn.setAttribute("aria-expanded", String(nextOpen));
+        if (nextOpen) openBlocks.add(key);
+        else openBlocks.delete(key);
       });
     });
 
@@ -303,9 +345,9 @@ export async function renderStudio(view) {
       });
     });
 
-    listHost.querySelectorAll("[data-subset]").forEach((btn) => {
+    listHost.querySelectorAll("[data-subkey]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const sub = allSubsets[btn.dataset.subset];
+        const sub = allSubsets[btn.dataset.subkey];
         if (!sub) return;
         launchStage({
           examId: "hcm", mode: "warmup",
