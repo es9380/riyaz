@@ -628,6 +628,31 @@ function nextLivingScene() {
   return lvVisitIdx;
 }
 
+const HOME_TAGLINES = [
+  "Type fast. Get selected.",
+  "Your speed. Your selection.",
+  "Train your fingers. Earn your uniform.",
+  "Every keystroke closer to the uniform.",
+  "Type your way to the merit list.",
+  "Merit lists are typed, not wished for.",
+  "Practice like it's the real exam.",
+  "Where practice becomes selection.",
+  "One passage a day keeps failure away.",
+  "Practise today. Parade tomorrow.",
+  "Accuracy. Speed. Selection.",
+  "Type the exam before the exam.",
+  "Dream of the uniform? Type for it.",
+  "The keyboard is your exam hall.",
+  "Your name belongs in that list. Type it there.",
+  "Real passages. Real pressure. Real results.",
+  "Fast fingers. Honest results.",
+  "Type. Test. Improve. Repeat.",
+  "Speed is a skill. Build it daily.",
+  "From the first keystroke to the final merit list.",
+];
+let lastTagIdx = -1;
+let heroTagTimer = null;
+
 /* ——— Page ——— */
 
 export function renderHome(view) {
@@ -650,6 +675,8 @@ export function renderHome(view) {
 
   const sheetTarget = spec.targetWPM ? `${spec.targetWPM} WPM` : "Complete text";
   const sheetRule = spec.id === "hcm" ? "Marks 25" : spec.backspace ? "Backspace On" : "Backspace Off";
+  if (lastTagIdx < 0) lastTagIdx = Math.floor(Math.random() * HOME_TAGLINES.length);
+  let curTagIdx = lastTagIdx;
 
   view.innerHTML = `
   <section class="hero">
@@ -657,9 +684,10 @@ export function renderHome(view) {
       <div class="hero-copy">
         <div class="hero-kicker-row">
           <span class="fact-pill">${icon("target", 14)} ${totalMocks} Mocks · ${COUNTS.drills} Drills · ${COUNTS.warmups} Warm-ups</span>
-          <span class="pal-roost" aria-hidden="true"><piix-pal pal="bitbug" hue="81" scale="3"></piix-pal></span>
         </div>
-        <h1>Make speed your edge.<br />Clear the cutoff.</h1>
+        <div class="hero-headline-slot">
+          <h1 id="heroTagline">${esc(HOME_TAGLINES[curTagIdx])}</h1>
+        </div>
         <p class="hero-sub">Official exam rules, exact timers, and honest mistake scoring.</p>
         <div class="hero-ctas" style="margin-top:28px">
           <a class="btn btn-primary btn-lg" id="heroMainCta" href="#/hub/${examId}">
@@ -674,7 +702,10 @@ export function renderHome(view) {
         </div>
       </div>
       <div class="hero-action-box">
-        <div id="lvHost">${livingVisualHtml(lvScene)}</div>
+        <div class="lv-frame" id="lvFrame">
+          <div id="lvHost">${livingVisualHtml(lvScene)}</div>
+        </div>
+        <piix-pal pal="bitbug" on="#lvFrame" speed="0.35" hue="81" scale="2"></piix-pal>
         <div class="exam-switch hero-exams" role="group" aria-label="Your active exam">
           ${EXAM_SPECS.map((s) => `<button type="button" data-exam="${s.id}" aria-pressed="${s.id === examId}">${esc(s.short)}</button>`).join("")}
         </div>
@@ -884,6 +915,28 @@ export function renderHome(view) {
   };
   wireLvDots();
   const lvReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const tagEl = view.querySelector("#heroTagline");
+  if (heroTagTimer) { clearInterval(heroTagTimer); heroTagTimer = null; }
+  if (!lvReduced && tagEl) {
+    heroTagTimer = setInterval(() => {
+      if (!document.body.contains(tagEl)) { clearInterval(heroTagTimer); heroTagTimer = null; return; }
+      let nextIdx = curTagIdx;
+      while (nextIdx === curTagIdx) {
+        nextIdx = Math.floor(Math.random() * HOME_TAGLINES.length);
+      }
+      curTagIdx = nextIdx;
+      lastTagIdx = nextIdx;
+      tagEl.classList.add("is-out");
+      setTimeout(() => {
+        if (!document.body.contains(tagEl)) return;
+        tagEl.textContent = HOME_TAGLINES[nextIdx];
+        tagEl.classList.remove("is-out");
+        tagEl.classList.add("is-in");
+        void tagEl.offsetWidth;
+        tagEl.classList.remove("is-in");
+      }, 280);
+    }, 4200);
+  }
   if (!lvReduced && lvHost) {
     const lvTimer = setInterval(() => {
       if (!document.body.contains(lvHost)) { clearInterval(lvTimer); return; }
