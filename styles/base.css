@@ -413,13 +413,13 @@ piix-pal canvas {
 }
 
 .view-enter {
-  animation: view-in var(--dur) var(--ease);
+  animation: view-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes view-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;

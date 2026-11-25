@@ -7,6 +7,7 @@ import { EXAM_SPECS, specOf } from "../data/examSpecs.js";
 import { examState } from "../app.js";
 import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
+import * as sound from "../core/sound.js";
 import { esc, icon } from "../core/util.js";
 
 const CIRC = 2 * Math.PI * 26;
@@ -226,15 +227,15 @@ function mountDemo(root) {
     const words = target.split(" ");
     let pos = 0;
     words.forEach((word, wi) => {
-      html += `<span class="w">`;
+      let inner = "";
       for (const ch of word) {
         const t = typed[pos];
         const cls = !t ? "c" : t.ok ? "c ok" : "c bad";
-        if (pos === typed.length) html += `<span class="demo-caret" aria-hidden="true"></span>`;
-        html += `<span class="${cls}">${esc(t ? t.ch : ch)}</span>`;
+        if (pos === typed.length) inner += `<span class="demo-caret" aria-hidden="true"></span>`;
+        inner += `<span class="${cls}">${esc(t ? t.ch : ch)}</span>`;
         pos++;
       }
-      html += `</span>`;
+      html += `<span class="w">${inner}</span>`;
       if (wi < words.length - 1) {
         const t = typed[pos];
         const cls = !t ? "c" : t.ok ? "c ok" : "c bad";
@@ -375,6 +376,7 @@ function mountDemo(root) {
     keys++;
     const ok = e.key === target[typed.length];
     if (!ok) errKeys++;
+    sound.playKey(ok, e.key === " ");
     typed.push({ ch: e.key, ok });
     render();
   });
@@ -763,7 +765,7 @@ export function renderHome(view) {
         </div>
       </div>
       <div class="today-cell">
-        <div class="dual-goal">
+        <div class="dual-goal${todayCount >= goal ? " goal-hit" : ""}">
           ${ringSVG(Math.min(1, todayCount / goal), `Daily goal: ${todayCount} of ${goal} tests`)}
           <div class="dual-goal-text">
             <span class="label">Daily goal</span>
@@ -891,6 +893,8 @@ export function renderHome(view) {
     const effective = store.goal();
     const gMax = view.querySelector("#goalMax");
     if (gMax) gMax.textContent = String(effective);
+    const goalBox = view.querySelector(".dual-goal");
+    if (goalBox) goalBox.classList.toggle("goal-hit", todayCount >= effective);
     const ring = view.querySelector(".dual-goal .mini-ring");
     if (ring) {
       ring.setAttribute("aria-label", `Daily goal: ${todayCount} of ${effective} tests`);

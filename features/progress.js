@@ -2,7 +2,7 @@
 
 import * as store from "../core/store.js";
 import { specOf } from "../data/examSpecs.js";
-import { esc, fmtDate, icon } from "../core/util.js";
+import { esc, fmtDate, icon, qwertyHeatmapHtml } from "../core/util.js";
 
 /* ——— Delight layer: Piixpal (self-hosted, vendor/piixpal/) ———
    Lurk peeks over the empty state, and only the empty state: this
@@ -42,6 +42,38 @@ function verdictBadge(e) {
   return e.qualified
     ? `<span class="badge pass">Qualified</span>`
     : `<span class="badge fail">Below bar</span>`;
+}
+
+function calendarHeatmapHtml(rows) {
+  const byDay = new Map();
+  let totalChars = 0;
+  for (const r of rows) {
+    totalChars += Number(r.chars || 0);
+    const d = new Date(r.ts || r.dateStr);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    byDay.set(key, (byDay.get(key) || 0) + 1);
+  }
+  const now = new Date();
+  const cells = [];
+  let activeDays = 0;
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const cnt = byDay.get(key) || 0;
+    if (cnt > 0) activeDays++;
+    const lvl = cnt === 0 ? 0 : cnt === 1 ? 1 : cnt <= 3 ? 2 : 3;
+    const lbl = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    cells.push(`<span class="cal-cell lvl-${lvl}${i === 0 ? " today" : ""}" title="${lbl}: ${cnt} test${cnt === 1 ? "" : "s"}"></span>`);
+  }
+  return `
+  <div class="cal-card">
+    <div class="cal-head">
+      <strong>Last 30 Days Consistency</strong>
+      <span class="cal-meta">${activeDays} active day${activeDays === 1 ? "" : "s"} · ${totalChars.toLocaleString("en-IN")} total keystrokes</span>
+    </div>
+    <div class="cal-grid" role="img" aria-label="30-day practice activity heatmap">${cells.join("")}</div>
+  </div>`;
 }
 
 function matchesFilter(e, filter) {
@@ -268,6 +300,7 @@ export function renderProgress(view) {
       ${weakWords.length ? `<h3 style="font-size:var(--fs-h3);margin-top:20px">Words to revise</h3>
         <div class="word-chips">${weakWords.map(([w, n]) => `<span class="word-chip">${esc(w)}<b>×${n}</b></span>`).join("")}</div>` : ""}
       ${weakKeys.length ? `<h3 style="font-size:var(--fs-h3);margin-top:20px">Weakest keys</h3>
+        ${qwertyHeatmapHtml(e.weakKeys)}
         <div class="word-chips">${weakKeys.map(([k, n]) => `<span class="word-chip mono">${esc(k === " " ? "space" : k)}<b>×${n}</b></span>`).join("")}</div>` : ""}
     </div>`;
   }
@@ -290,7 +323,7 @@ export function renderProgress(view) {
     </div>`;
 
     const spec = (filter === "hcm" || filter === "chsl" || filter === "rrb") ? specOf(filter) : null;
-    trendHost.innerHTML = renderTrendSvg(rows, spec ? spec.targetWPM : 0);
+    trendHost.innerHTML = renderTrendSvg(rows, spec ? spec.targetWPM : 0) + calendarHeatmapHtml(rows);
 
     if (!rows.length) {
       detailHost.innerHTML = "";

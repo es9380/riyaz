@@ -57,3 +57,35 @@ export function icon(name, size = 16) {
   const body = ICONS[name] || "";
   return `<svg class="ui-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }
+
+const QWERTY_ROWS = [
+  ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+  ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+  ["z", "x", "c", "v", "b", "n", "m"],
+  [" "],
+];
+
+export function qwertyHeatmapHtml(weakKeys) {
+  const map = {};
+  if (weakKeys && typeof weakKeys === "object") {
+    for (const [k, v] of Object.entries(weakKeys)) {
+      if (!v) continue;
+      const nk = k === " " ? " " : String(k).toLowerCase();
+      map[nk] = (map[nk] || 0) + Number(v || 0);
+    }
+  }
+  const vals = Object.values(map);
+  if (!vals.length) return "";
+  const max = Math.max(1, ...vals);
+  return `<div class="kbd-map" role="img" aria-label="Weak keys keyboard heatmap">
+    ${QWERTY_ROWS.map((row) => `<div class="kbd-row">
+      ${row.map((k) => {
+        const cnt = map[k] || 0;
+        const ratio = cnt ? cnt / max : 0;
+        const lvl = !cnt ? 0 : ratio >= 0.65 ? 3 : ratio >= 0.3 ? 2 : 1;
+        const lbl = k === " " ? "Space" : k.toUpperCase();
+        return `<span class="kbd-key lvl-${lvl}${k === " " ? " wide" : ""}" title="${lbl}${cnt ? `: ${cnt} misses` : ""}">${lbl}${cnt ? `<b>${cnt}</b>` : ""}</span>`;
+      }).join("")}
+    </div>`).join("")}
+  </div>`;
+}

@@ -49,11 +49,14 @@ function initPrefsMenu() {
   const errChk = document.getElementById("prefErrHl");
   const zenChk = document.getElementById("prefZen");
   const fontBtns = menu.querySelectorAll("[data-pfont]");
+  const soundBtns = menu.querySelectorAll("[data-psound]");
 
   function sync() {
     if (goalVal) goalVal.textContent = String(store.goal());
     const fs = store.fontStep();
     fontBtns.forEach((b) => b.setAttribute("aria-pressed", String(parseInt(b.dataset.pfont, 10) === fs)));
+    const snd = store.setting("sound") || "off";
+    soundBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.psound === snd)));
     if (errChk) errChk.checked = store.setting("errHl") !== false;
     if (zenChk) zenChk.checked = store.setting("zen") !== false;
   }
@@ -87,6 +90,11 @@ function initPrefsMenu() {
   });
   fontBtns.forEach((b) => b.addEventListener("click", () => {
     store.setFontStep(parseInt(b.dataset.pfont, 10));
+    sync();
+    window.dispatchEvent(new CustomEvent("ts:prefs"));
+  }));
+  soundBtns.forEach((b) => b.addEventListener("click", () => {
+    store.setting("sound", b.dataset.psound);
     sync();
     window.dispatchEvent(new CustomEvent("ts:prefs"));
   }));

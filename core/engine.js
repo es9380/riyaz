@@ -22,6 +22,8 @@ import {
   hcmMarksFor, hcmBandLabel, wordTokens,
 } from "./scoring.js";
 import * as store from "./store.js";
+import * as sound from "./sound.js";
+import { qwertyHeatmapHtml } from "./util.js";
 import { specOf } from "../data/examSpecs.js";
 
 const FONT_PX = [17, 19, 21, 23];
@@ -64,16 +66,21 @@ const ENGINE_CSS = `
 .ts-readout{display:flex;flex-direction:column}
 .ts-readout .v{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.05}
 .ts-readout .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted,#9A978C)}
-.ts-prog{height:3px;background:var(--line,#2A2C33);border-radius:2px;margin-top:10px;overflow:hidden}
-.ts-prog i{display:block;height:100%;width:0;background:var(--accent,#F59E0B);transition:width .25s ease}
+.ts-prog{position:relative;height:3px;background:var(--line,#2A2C33);border-radius:2px;margin-top:10px;overflow:visible}
+.ts-prog i{display:block;height:100%;width:0;background:var(--accent,#F59E0B);border-radius:2px;transition:width .25s ease}
+.ts-pacer-mark{position:absolute;top:-3px;width:9px;height:9px;border-radius:50%;background:var(--ok,#3ddc97);box-shadow:0 0 8px var(--ok,#3ddc97);transform:translateX(-50%);pointer-events:none;transition:left .22s linear;z-index:2}
+.ts-pop-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px;border-top:1px solid var(--line,#2A2C33);margin-top:6px}
+.ts-pop-seg{display:inline-flex;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:999px;overflow:hidden}
+.ts-pop-seg button{appearance:none;border:0;background:none;color:var(--muted,#9A978C);font:inherit;font-size:11.5px;font-weight:700;padding:3px 7px;cursor:pointer}
+.ts-pop-seg button.on{background:var(--accent,#F59E0B);color:var(--accent-ink,#141414)}
 .ts-typebox{position:relative;margin-top:14px;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);padding:22px 24px;max-height:342px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
 .ts-typebox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,var(--line-strong,var(--line,#2A2C33)))}
 .ts-typetext{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1}
-.ts-typetext .ch{border-radius:3px}
-.ts-typetext.no-err .ch{color:var(--ink-2,#9A978C)}
-.ts-typetext .ch.ok{color:var(--ok,#4ADE80)}
-.ts-typetext .ch.bad{color:var(--error,#F87171);background:color-mix(in srgb,var(--error,#F87171) 13%,transparent)}
-.ts-typetext .ch.typed,.ts-typetext.no-err .ch.typed{color:var(--ink,#E8E6DF);font-weight:700;background:color-mix(in srgb,var(--accent,#F59E0B) 14%,transparent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent,#F59E0B) 55%,transparent);text-decoration-thickness:1.5px;text-underline-offset:4px}
+.ts-typetext .ch{border-radius:3px;color:color-mix(in srgb,var(--ink,#E8E6DF) 44%,transparent)}
+.ts-typetext.no-err .ch{color:color-mix(in srgb,var(--ink,#E8E6DF) 44%,transparent)}
+.ts-typetext .ch.ok{color:var(--ink,#E8E6DF)}
+.ts-typetext .ch.bad{color:var(--error,#F87171);background:color-mix(in srgb,var(--error,#F87171) 14%,transparent)}
+.ts-typetext .ch.typed,.ts-typetext.no-err .ch.typed{color:var(--ink,#E8E6DF)}
 .ts-caret{position:absolute;width:2px;background:var(--accent,#F59E0B);border-radius:1px;z-index:2;pointer-events:none;opacity:0;transition:left 55ms ease-out,top 55ms ease-out}
 .ts-caret.on{opacity:1;animation:tsblink 1.1s ease-in-out infinite}
 @keyframes tsblink{0%,38%{opacity:1}72%{opacity:.12}100%{opacity:1}}
@@ -84,7 +91,7 @@ const ENGINE_CSS = `
 .ts-paperbox{position:relative;margin-top:12px;border:1.5px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);box-shadow:inset 3px 0 0 var(--accent,#F59E0B);padding:20px 24px;height:240px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
 .ts-paperbox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 58%,var(--line-strong,var(--line,#2A2C33)))}
 .ts-paper-typed{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1;min-height:calc(var(--ts-fs)*var(--ts-lh));color:var(--ink,#E8E6DF)}
-.ts-paper-typed.has-typed{font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,transparent);text-decoration-thickness:2px;text-underline-offset:5px}
+.ts-paper-typed.has-typed{font-weight:700;color:var(--ink,#E8E6DF)}
 .ts-paper-typed .ph{color:var(--muted,#9A978C)}
 .ts-ptcaret{display:inline;position:relative}
 .ts-ptcaret::after{content:"\\200B"}
@@ -181,6 +188,18 @@ header,nav{transition:opacity .3s ease}
 .ts-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 .ts-actions a.ts-btn{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 .ts-actions button.ts-btn{display:inline-flex;align-items:center;gap:6px}
+.ts-btn.sprint{border-color:color-mix(in srgb,var(--ok,#3ddc97) 55%,var(--line));color:var(--ok,#3ddc97);background:color-mix(in srgb,var(--ok,#3ddc97) 10%,var(--surface,#15171C));font-weight:650}
+.ts-pace-svg{width:100%;height:124px;display:block;overflow:visible}
+.ts-pace-note{margin:6px 0 0;font-size:12.5px;color:var(--muted,#9A978C)}
+.kbd-map{display:grid;gap:5px;margin-top:10px}
+.kbd-row{display:flex;gap:5px;justify-content:center;flex-wrap:nowrap}
+.kbd-key{position:relative;min-width:26px;height:28px;padding:0 5px;border-radius:6px;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--bg-raise,#12142a);color:var(--muted,#9A978C);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.kbd-key.wide{min-width:118px}
+.kbd-key b{font-size:9.5px;font-weight:800;opacity:.9}
+.kbd-key.lvl-1{color:var(--ink,#E8E6DF);border-color:color-mix(in srgb,var(--accent,#ffb020) 50%,var(--line));background:color-mix(in srgb,var(--accent,#ffb020) 14%,var(--bg-raise,#12142a))}
+.kbd-key.lvl-2{color:var(--accent-strong,#ffc65c);border-color:color-mix(in srgb,var(--accent,#ffb020) 75%,var(--line));background:color-mix(in srgb,var(--accent,#ffb020) 24%,var(--bg-raise,#12142a))}
+.kbd-key.lvl-3{color:var(--error,#ff6b7a);border-color:color-mix(in srgb,var(--error,#ff6b7a) 75%,var(--line));background:color-mix(in srgb,var(--error,#ff6b7a) 22%,var(--bg-raise,#12142a))}
+@media (max-width:560px){.kbd-key{min-width:22px;height:25px;font-size:10px}.kbd-key.wide{min-width:86px}}
 @media (max-width:760px){.ts-compare-grid{grid-template-columns:1fr}}
 @media (max-width:680px){.ts-hero-row{grid-template-columns:1fr}.ts-verdict-hero{padding:18px 18px}}
 @media (max-width:560px){.ts-stage{padding:14px 12px 56px}.ts-typebox{padding:18px 16px}.ts-sheet{padding:18px 18px 26px}.ts-capture{padding:18px 16px}.ts-eb-row{grid-template-columns:104px 1fr 28px}}
@@ -256,8 +275,13 @@ class Stage {
     this.paperHold = false;
     this.paperProgScroll = false;
     this.spanCls = [];         /* screen-view span class cache */
+    this.spanTxt = [];         /* screen-view span text cache */
     this.builtTarget = null;   /* target string the spans were built for */
     this.boundHandlers = [];
+    this.pacerWpm = Number(store.setting("pacer")) || 0;
+    this.paceBuckets = [];
+    this.lastPaceLen = 0;
+    this.lastPaceSec = 0;
   }
 
   /* The effective target: RRB cycles the passage; others are fixed. */
@@ -376,6 +400,45 @@ class Stage {
     });
     lab.appendChild(chk);
     pop.appendChild(lab);
+    /* Sound profile selector */
+    const sndRow = h("div", "ts-pop-row");
+    sndRow.appendChild(h("span", "", "Key sounds"));
+    const sndSeg = h("span", "ts-pop-seg");
+    const sndBtns = [["off", "Off"], ["mech", "Mech"], ["type", "Type"]].map(([id, lbl]) => {
+      const b = h("button", sound.soundMode() === id ? "on" : "", lbl);
+      b.type = "button";
+      b.addEventListener("click", () => {
+        sound.setSoundMode(id);
+        sndBtns.forEach((x, idx) => x.classList.toggle("on", idx === ["off", "mech", "type"].indexOf(id)));
+        window.dispatchEvent(new CustomEvent("ts:prefs"));
+      });
+      sndSeg.appendChild(b);
+      return b;
+    });
+    sndRow.appendChild(sndSeg);
+    pop.appendChild(sndRow);
+
+    if (!this.isExam) {
+      const pacRow = h("div", "ts-pop-row");
+      pacRow.appendChild(h("span", "", "Pacer (WPM)"));
+      const pacSeg = h("span", "ts-pop-seg");
+      const pacOpts = [0, 30, 35, 40, 45];
+      const pacBtns = pacOpts.map((w) => {
+        const b = h("button", this.pacerWpm === w ? "on" : "", w ? String(w) : "Off");
+        b.type = "button";
+        b.addEventListener("click", () => {
+          this.pacerWpm = w;
+          store.setting("pacer", w);
+          pacBtns.forEach((x, idx) => x.classList.toggle("on", pacOpts[idx] === w));
+          this.renderStats();
+        });
+        pacSeg.appendChild(b);
+        return b;
+      });
+      pacRow.appendChild(pacSeg);
+      pop.appendChild(pacRow);
+    }
+
     const note = h("p", "", "Errors are always scored exactly — this only changes colours while you type.");
     note.style.cssText = "margin:6px 0 0;font-size:12px;color:var(--muted,#9A978C)";
     pop.appendChild(note);
@@ -449,6 +512,11 @@ class Stage {
       pr.appendChild(this.prTime); pr.appendChild(this.prNet); pr.appendChild(this.prAcc); pr.appendChild(this.prErr);
       body.appendChild(pr);
       const prog = h("div", "ts-prog"); this.progFill = h("i", ""); prog.appendChild(this.progFill);
+      this.pacerEl = h("span", "ts-pacer-mark");
+      this.pacerEl.title = "Target speed pacer";
+      this.pacerEl.hidden = !this.pacerWpm;
+      this.pacerEl.style.left = "0%";
+      prog.appendChild(this.pacerEl);
       body.appendChild(prog);
     }
 
@@ -579,9 +647,16 @@ class Stage {
       try { this.capture.setSelectionRange(nc, nc); } catch (e) {}
     }
     if (!this.started && v.length > 0) this.startTimer();
+    const prevLen = this.typed.length;
     this.typed = v;
     const sel = this.capture.selectionStart;
     this.caret = Math.max(0, Math.min(sel != null ? sel : v.length, v.length));
+    if (v.length > prevLen) {
+      const idx = Math.max(0, this.caret - 1);
+      const ch = v[idx] || "";
+      const tgtCh = this.target()[idx];
+      sound.playKey(!this.liveErrors || ch === tgtCh, ch === " ");
+    }
     /* A caret that arrived by typing/backspacing sits just after the
        last touched char — at a wrap boundary that char is on the line
        above, so the caret's affinity is upstream. */
@@ -955,9 +1030,24 @@ class Stage {
     const flags = (typed.length && !this.finished) ? this.charFlags() : null;
     const kids = this.typeText.children;
     for (let i = 0; i < kids.length; i++) {
+      const hasTyped = !this.finished && i < typed.length;
+      const wantTxt = (hasTyped && tgt[i] !== "\n")
+        ? (typed[i] === "\n" ? " " : typed[i])
+        : tgt[i];
+      if (this.spanTxt[i] !== wantTxt) {
+        kids[i].textContent = wantTxt;
+        this.spanTxt[i] = wantTxt;
+      }
       let cls = "ch";
-      if (flags && flags[i] === true) cls += showErr ? " ok" : " typed";
-      else if (flags && flags[i] === false) cls += showErr ? " bad" : " typed";
+      if (!showErr) {
+        if (hasTyped) cls += " typed";
+      } else if (flags && flags[i] === true) {
+        cls += " ok";
+      } else if (flags && flags[i] === false) {
+        cls += " bad";
+      } else if (hasTyped) {
+        cls += typed[i] === tgt[i] ? " ok" : " bad";
+      }
       if (this.spanCls[i] !== cls) { kids[i].className = cls; this.spanCls[i] = cls; }
     }
     this.positionCaret();
@@ -966,11 +1056,13 @@ class Stage {
   buildSpans(tgt) {
     this.builtTarget = tgt;
     this.spanCls = [];
+    this.spanTxt = [];
     const frag = document.createDocumentFragment();
     for (let i = 0; i < tgt.length; i++) {
       const s = document.createElement("span");
       s.className = "ch";
       s.textContent = tgt[i];
+      this.spanTxt[i] = tgt[i];
       frag.appendChild(s);
     }
     this.typeText.innerHTML = "";
@@ -1063,6 +1155,14 @@ class Stage {
     this.prErr.querySelector(".v").textContent = String(errs);
     const prog = this.baseText.length ? Math.min(100, this.typed.length / this.baseText.length * 100) : 0;
     this.progFill.style.width = prog + "%";
+    if (this.pacerEl) {
+      this.pacerEl.hidden = !this.pacerWpm || !this.baseText.length;
+      if (this.pacerWpm && this.baseText.length) {
+        const expectedChars = elapsed * (this.pacerWpm * 5 / 60);
+        const pacePct = Math.min(100, (expectedChars / this.baseText.length) * 100);
+        this.pacerEl.style.left = pacePct.toFixed(2) + "%";
+      }
+    }
   }
 
   /* ---------------- view / font / zen ---------------- */
@@ -1167,6 +1267,13 @@ class Stage {
     const step = () => {
       if (this.destroyed || this.finished) return;
       const elapsed = (performance.now() - this.startT) / 1000;
+      if (elapsed - this.lastPaceSec >= 10) {
+        const dt = elapsed - this.lastPaceSec;
+        const dc = Math.max(0, this.typed.length - this.lastPaceLen);
+        this.paceBuckets.push({ sec: Math.round(elapsed), wpm: Math.min(200, Math.round((dc / 5) / (dt / 60))) });
+        this.lastPaceLen = this.typed.length;
+        this.lastPaceSec = elapsed;
+      }
       if (this.isExam) {
         this.tickPill();
         if (elapsed >= this.durationMin * 60) { this.finish(true); return; }
@@ -1234,6 +1341,11 @@ class Stage {
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
     document.body.classList.remove("ts-zen");
     const elapsed = this.elapsedSec();
+    if (elapsed - this.lastPaceSec >= 2 && this.paceBuckets.length >= 1) {
+      const dt = elapsed - this.lastPaceSec;
+      const dc = Math.max(0, this.typed.length - this.lastPaceLen);
+      this.paceBuckets.push({ sec: Math.round(elapsed), wpm: Math.min(200, Math.round((dc / 5) / (dt / 60))) });
+    }
     const typed = this.typed;
     const durSec = Math.round(elapsed);
     const prevBest = this.testId ? store.bestFor(this.testId) : null;
@@ -1291,14 +1403,32 @@ class Stage {
     }
 
     const stored = store.addResult(entry);
+    sound.playFinish(!entry.incomplete && entry.qualified !== false);
     if (this.pill) { this.pill.remove(); this.pill = null; }
     this.stageBody.style.display = "none";
     if (this.prePanel) this.prePanel.style.display = "none";
     this.submitBtn.disabled = true;
     this.resultEl.innerHTML = resultHtml;
     this.resultEl.style.display = "";
+    this.animateResultNums();
     const rb = this.resultEl.querySelector("[data-act='retake']");
     if (rb) rb.addEventListener("click", () => this.restart());
+    const sb = this.resultEl.querySelector("[data-act='sprint']");
+    if (sb && this.lastSprintText) {
+      sb.addEventListener("click", () => {
+        const text = this.lastSprintText;
+        this.destroy();
+        if (current === this) current = null;
+        openStage({
+          examId: this.examId,
+          mode: "revision",
+          title: "Mistake Sprint (60s)",
+          text,
+          durationMin: 1,
+          backspaceDefault: true,
+        });
+      });
+    }
     window.scrollTo(0, 0);
     if (this.onDone) { try { this.onDone(stored); } catch (e) {} }
   }
@@ -1315,20 +1445,52 @@ class Stage {
     ).join("") + "</div>";
   }
 
+  animateResultNums() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const els = this.resultEl.querySelectorAll("[data-cu]");
+    if (!els.length) return;
+    const t0 = performance.now();
+    const dur = 480;
+    const items = [...els].map((el) => ({
+      el,
+      target: Number(el.dataset.cu) || 0,
+      dec: parseInt(el.dataset.cudec || "0", 10),
+      finalText: el.dataset.cufinal != null ? el.dataset.cufinal : el.textContent,
+    }));
+    const tick = (now) => {
+      if (this.destroyed) return;
+      const p = Math.min(1, (now - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      for (const it of items) {
+        if (p >= 1) { it.el.textContent = it.finalText; continue; }
+        const v = it.target * eased;
+        it.el.textContent = it.dec ? v.toFixed(it.dec) : String(Math.round(v));
+      }
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
   heroStatsHtml(primaryVal, primaryUnit, primaryLabel, primaryNote, accPct) {
     const clamped = Math.max(0, Math.min(100, Number(accPct) || 0));
     const circ = 2 * Math.PI * 30;
     const off = circ * (1 - clamped / 100);
     const ringCls = clamped >= 95 ? "" : clamped >= 85 ? " warn" : " bad";
+    const accStr = clamped.toFixed ? Number(accPct).toFixed(1) : String(accPct);
+    const numVal = Number(primaryVal);
+    const pSpan = Number.isFinite(numVal)
+      ? '<span data-cu="' + esc(numVal) + '" data-cudec="0" data-cufinal="' + esc(primaryVal) + '">' + esc(primaryVal) + "</span>"
+      : esc(primaryVal);
+    const aSpan = '<span data-cu="' + esc(clamped) + '" data-cudec="1" data-cufinal="' + esc(accStr) + '">' + esc(accStr) + "</span>";
     return '<div class="ts-hero-row">' +
       '<div class="ts-kpi-card"><div>' +
         '<div class="ts-kpi-lbl">' + esc(primaryLabel) + "</div>" +
-        '<div class="ts-kpi-big">' + esc(primaryVal) + '<span class="ts-kpi-unit">' + esc(primaryUnit) + "</span></div>" +
+        '<div class="ts-kpi-big">' + pSpan + '<span class="ts-kpi-unit">' + esc(primaryUnit) + "</span></div>" +
         (primaryNote ? '<div class="ts-kpi-note">' + esc(primaryNote) + "</div>" : "") +
       "</div></div>" +
       '<div class="ts-kpi-card"><div>' +
         '<div class="ts-kpi-lbl">Accuracy</div>' +
-        '<div class="ts-kpi-big">' + esc(clamped.toFixed ? Number(accPct).toFixed(1) : accPct) + '<span class="ts-kpi-unit">%</span></div>' +
+        '<div class="ts-kpi-big">' + aSpan + '<span class="ts-kpi-unit">%</span></div>' +
         '<div class="ts-kpi-note">' + (clamped >= 98 ? "Clean precision" : clamped >= 95 ? "Exam standard" : "Focus on accuracy") + "</div>" +
       '</div><svg class="ts-acc-ring' + ringCls + '" viewBox="0 0 76 76" aria-hidden="true">' +
         '<circle class="bg" cx="38" cy="38" r="30"/>' +
@@ -1341,14 +1503,70 @@ class Stage {
       '<div class="ts-tile"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + "</div></div>").join("") + "</div>";
   }
 
-  actionsHtml(errs) {
+  buildSprintText(sc) {
+    const words = [];
+    const seen = new Set();
+    const pushWord = (w) => {
+      if (!w || w === "(skipped)" || w === "(extra)" || w === "(missed)") return;
+      for (const part of String(w).trim().split(/\s+/)) {
+        if (part && !seen.has(part)) { seen.add(part); words.push(part); }
+      }
+    };
+    if (sc && sc.weakWords) {
+      Object.keys(sc.weakWords).sort((a, b) => (sc.weakWords[b] || 0) - (sc.weakWords[a] || 0)).forEach(pushWord);
+    }
+    if (sc && Array.isArray(sc.mistakeDetail)) {
+      sc.mistakeDetail.forEach((d) => { if (!d.tail) pushWord(d.exp); });
+    }
+    if (!words.length) return "";
+    const out = [];
+    let i = 0;
+    while (out.length < 36) {
+      out.push(words[i % words.length]);
+      i++;
+    }
+    return out.join(" ");
+  }
+
+  pacingSvgHtml(targetWpm) {
+    const pts = this.paceBuckets;
+    if (!pts || pts.length < 2) return "";
+    const W = 540, H = 112, padL = 30, padR = 14, padT = 12, padB = 22;
+    const cw = W - padL - padR, ch = H - padT - padB;
+    const maxV = Math.max(40, targetWpm || 0, ...pts.map((p) => p.wpm)) + 8;
+    const coords = pts.map((p, idx) => ({
+      x: padL + (pts.length === 1 ? cw / 2 : (idx / (pts.length - 1)) * cw),
+      y: padT + ch - Math.min(1, p.wpm / maxV) * ch,
+      ...p,
+    }));
+    const dLine = coords.map((c, idx) => (idx ? "L" : "M") + c.x.toFixed(1) + " " + c.y.toFixed(1)).join(" ");
+    const dArea = dLine + " L" + coords[coords.length - 1].x.toFixed(1) + " " + (padT + ch) + " L" + coords[0].x.toFixed(1) + " " + (padT + ch) + " Z";
+    const tgtY = targetWpm > 0 ? padT + ch - Math.min(1, targetWpm / maxV) * ch : null;
+    const peak = Math.max(...pts.map((p) => p.wpm));
+    const low = Math.min(...pts.map((p) => p.wpm));
+    const last = pts[pts.length - 1].wpm;
+    return '<div class="ts-card"><h3>Speed Pacing (10s intervals)</h3>' +
+      '<svg class="ts-pace-svg" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="10-second interval WPM pacing graph">' +
+      "<defs><linearGradient id=\"tsPaceGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"var(--accent,#ffb020)\" stop-opacity=\"0.3\"/><stop offset=\"100%\" stop-color=\"var(--accent,#ffb020)\" stop-opacity=\"0\"/></linearGradient></defs>" +
+      (tgtY != null ? '<line x1="' + padL + '" y1="' + tgtY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + tgtY.toFixed(1) + '" stroke="var(--ok,#3ddc97)" stroke-dasharray="4 4" stroke-width="1"/><text x="' + (W - padR) + '" y="' + (tgtY - 4).toFixed(1) + '" text-anchor="end" fill="var(--ok,#3ddc97)" font-size="9.5" font-weight="700">' + targetWpm + " target</text>" : "") +
+      '<path d="' + dArea + '" fill="url(#tsPaceGrad)"/>' +
+      '<path d="' + dLine + '" fill="none" stroke="var(--accent,#ffb020)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      coords.map((c) => '<circle cx="' + c.x.toFixed(1) + '" cy="' + c.y.toFixed(1) + '" r="3.4" fill="var(--accent,#ffb020)"><title>' + c.sec + "s: " + c.wpm + " WPM</title></circle>").join("") +
+      '<text x="' + padL + '" y="' + (H - 5) + '" fill="var(--muted,#9A978C)" font-size="9.5">Start</text>' +
+      '<text x="' + (W - padR) + '" y="' + (H - 5) + '" text-anchor="end" fill="var(--muted,#9A978C)" font-size="9.5">' + pts[pts.length - 1].sec + "s</text>" +
+      '</svg><p class="ts-pace-note">Peak ' + peak + " WPM · Lowest " + low + " WPM · Finish " + last + " WPM</p></div>";
+  }
+
+  actionsHtml(errs, sprintText = "") {
+    this.lastSprintText = sprintText || "";
     const backHref = this.mode === "mock" && this.examId ? "#/hub/" + esc(this.examId)
       : (this.mode === "drill" || this.mode === "warmup" || this.mode === "revision") ? "#/studio"
       : "#/arena";
     const backLabel = this.mode === "mock" ? "More Mocks" : "More Practice";
     return '<div class="ts-actions">' +
       '<button type="button" class="ts-btn primary" data-act="retake">↻ Retake</button>' +
-      (errs > 0 && this.family === "hcm" ? '<a class="ts-btn" href="#/studio">⚡ Practise Weak Words</a>' : "") +
+      (sprintText ? '<button type="button" class="ts-btn sprint" data-act="sprint">⚡ Fix Mistakes Now (60s)</button>' : "") +
+      (errs > 0 && this.family === "hcm" ? '<a class="ts-btn" href="#/studio">Weak Words Studio</a>' : "") +
       '<a class="ts-btn" href="' + backHref + '">' + esc(backLabel) + "</a>" +
       '<a class="ts-btn" href="#/progress">Progress</a>' +
       '<a class="ts-btn" href="#/">Home</a></div>';
@@ -1464,11 +1682,14 @@ class Stage {
       [e.words + "", "Words typed"], [e.bs + "", "Backspaces"], [fmtTime(e.durSec), "Time used"],
     ];
     html += this.tilesHtml(hcmTiles);
+    const kbdMap = qwertyHeatmapHtml(sc.weakKeys);
+    html += this.pacingSvgHtml(30);
     html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
     html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
-    if (weakK.length || weakW.length) {
-      html += '<div class="ts-card"><h3>Weak Spots</h3>' +
+    if (weakK.length || weakW.length || kbdMap) {
+      html += '<div class="ts-card"><h3>Weak Spots & Key Map</h3>' +
+        kbdMap +
         (weakK.length ? '<div class="ts-weak-chips">' + weakK.map((k) => '<span class="ts-wchip mono">' + esc(k === " " ? "Space" : k) + "<b>×" + sc.weakKeys[k] + "</b></span>").join("") + "</div>" : "") +
         (weakW.length ? '<div class="ts-weak-chips">' + weakW.map((w) => '<span class="ts-wchip">' + esc(w) + "<b>×" + sc.weakWords[w] + "</b></span>").join("") + "</div>" : "") +
       "</div>";
@@ -1479,7 +1700,7 @@ class Stage {
       "<li>Mistakes M = <b>" + e.errs + "</b> (Delhi Police counts full mistakes only)</li>" +
       "<li>Accuracy = (W − M) ÷ W = <b>" + e.acc + "%</b></li>" +
       "<li>Net speed = (W − 10 × M) ÷ minutes = <b>" + e.net + " WPM</b>" + (inc ? " (incomplete attempt — marks and qualification not awarded)" : " → " + esc(band)) + "</li></ol></details>";
-    html += this.actionsHtml(e.errs);
+    html += this.actionsHtml(e.errs, this.buildSprintText(sc));
     return html;
   }
 
@@ -1532,11 +1753,12 @@ class Stage {
             (c.pass ? "Qualified" : "Not qualified") + "</span></td></tr>").join("") + "</table>").join("") + "</div>";
     }
     const rows = (sc.mistakeDetail || []).map((d) => ({ exp: d.exp, got: d.got, kind: d.st, cat: "" }));
+    html += this.pacingSvgHtml(isE2 ? 30 : 35);
     html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(rows) + "</div>";
     html += '<details class="ts-card ts-calc-details"><summary>Show exact score calculation</summary><ol>' +
       calc.map((c) => "<li>" + esc(c) + "</li>").join("") + "</ol></details>";
-    html += this.actionsHtml(e.errs);
+    html += this.actionsHtml(e.errs, this.buildSprintText(sc));
     return html;
   }
 
@@ -1573,10 +1795,13 @@ class Stage {
       [e.gross + "", "Gross WPM"], [e.errs + "", "Mistakes"],
       [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time"],
     ]);
+    const pKbdMap = qwertyHeatmapHtml(sc.weakKeys);
+    html += this.pacingSvgHtml(0);
     if (cats.length) html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
     html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
-    html += this.actionsHtml(e.errs);
+    if (pKbdMap) html += '<div class="ts-card"><h3>Key Map</h3>' + pKbdMap + "</div>";
+    html += this.actionsHtml(e.errs, this.buildSprintText(sc));
     return html;
   }
 }
