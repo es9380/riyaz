@@ -15,7 +15,9 @@ export function readiness(hist, examId) {
   const list = Array.isArray(hist) ? hist : [];
   const mine = list.filter(function (x) {
     const examMatch = examId === "hcm" ? (!x.examId || x.examId === "hcm") : (x.examId === examId);
-    return examMatch && typeof x.net === "number";
+    /* Incomplete attempts (early submits) are practice records only — they
+       must never feed readiness, or an 11-second sprint would inflate it. */
+    return examMatch && typeof x.net === "number" && !x.incomplete;
   }).slice(0, 5);
   if (!mine.length) return null;
   const avgNet = mine.reduce(function (a, x) { return a + x.net; }, 0) / mine.length;
