@@ -32,7 +32,8 @@ function sameDay(ts, ref) {
 
 function localReadiness(hist, examId) {
   const spec = specOf(examId);
-  const mine = hist.filter((h) => (h.examId || "hcm") === examId).slice(0, 5);
+  /* Incomplete attempts never feed readiness (same rule as core/stats.js). */
+  const mine = hist.filter((h) => (h.examId || "hcm") === examId && !h.incomplete).slice(0, 5);
   if (!mine.length || !spec || !spec.targetWPM) return 0;
   const avgNet = mine.reduce((s, h) => s + (h.net || 0), 0) / mine.length;
   const avgAcc = mine.reduce((s, h) => s + (h.acc || 0), 0) / mine.length;
@@ -553,6 +554,7 @@ function calcStreak(hist) {
   if (!hist.length) return 0;
   const days = new Set();
   for (const h of hist) {
+    if (h.incomplete) continue;
     const d = new Date(h.ts || h.dateStr);
     if (!Number.isNaN(d.getTime())) days.add(d.toDateString());
   }
@@ -573,7 +575,7 @@ function examBest(hist, examId) {
   const complete = mine.filter((h) => !h.incomplete);
   const passed = mocks.filter((h) => h.qualified && !h.incomplete).length;
   const bestNet = complete.length ? Math.max(...complete.map((h) => Math.round(h.net || 0))) : null;
-  const triedIds = new Set(mocks.map((h) => h.testId).filter(Boolean));
+  const triedIds = new Set(mocks.filter((h) => !h.incomplete).map((h) => h.testId).filter(Boolean));
   return { count: mine.length, mocksTried: triedIds.size, passed, bestNet };
 }
 
@@ -671,7 +673,7 @@ export function renderHome(view) {
   const hist = store.history();
   const examId = examState.get();
   const spec = specOf(examId) || EXAM_SPECS[0];
-  const todayCount = hist.filter((h) => sameDay(h.ts, Date.now())).length;
+  const todayCount = hist.filter((h) => sameDay(h.ts, Date.now()) && !h.incomplete).length;
   const goal = Math.max(1, store.goal() || 2);
   const days = normDays(safeDays(hist), hist);
   const todayMin = days.length ? days[days.length - 1].minutes : 0;
