@@ -159,9 +159,26 @@ header,nav{transition:opacity .3s ease}
 .ts-weak-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
 .ts-wchip{padding:4px 10px;border-radius:999px;border:1px solid var(--line-strong,var(--line,#2A2C33));background:var(--bg-raise,#12142a);font-size:12.5px}
 .ts-wchip b{color:var(--error,#ff6b7a);margin-left:4px;font-variant-numeric:tabular-nums}
+.ts-cmp-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ts-cmp-head h3{margin:0}
+.ts-cmp-legend{display:inline-flex;align-items:center;gap:12px;font-size:12px;color:var(--muted,#9A978C)}
+.ts-cmp-legend span{display:inline-flex;align-items:center;gap:5px}
+.ts-cmp-legend .dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.ts-cmp-legend .dot.err{background:var(--error,#ff6b7a)}
+.ts-cmp-legend .dot.miss{background:var(--accent,#ffb020)}
+.ts-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ts-compare-pane{border:1px solid var(--line,#2A2C33);border-radius:10px;background:var(--bg-raise,#12142a);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ts-cmp-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#9A978C)}
+.ts-cmp-text{max-height:230px;overflow-y:auto;font-size:14px;line-height:1.8;word-break:break-word;color:var(--ink,#E8E6DF)}
+.ts-cw{display:inline;padding:1px 2px;border-radius:3px}
+.ts-cw.err{color:var(--error,#ff6b7a);background:color-mix(in srgb,var(--error,#ff6b7a) 16%,transparent);font-weight:650;text-decoration:underline;text-decoration-color:var(--error,#ff6b7a);text-underline-offset:3px}
+.ts-cw.half{color:var(--accent-strong,#ffc65c);background:color-mix(in srgb,var(--accent,#ffb020) 15%,transparent);font-weight:600}
+.ts-cw.miss{color:var(--accent-strong,#ffc65c);background:color-mix(in srgb,var(--accent,#ffb020) 13%,transparent);border-bottom:1.5px dashed color-mix(in srgb,var(--accent,#ffb020) 65%,transparent)}
+.ts-cw.rest{opacity:.48}
 .ts-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 .ts-actions a.ts-btn{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 .ts-actions button.ts-btn{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:760px){.ts-compare-grid{grid-template-columns:1fr}}
 @media (max-width:680px){.ts-hero-row{grid-template-columns:1fr}.ts-verdict-hero{padding:18px 18px}}
 @media (max-width:560px){.ts-stage{padding:14px 12px 56px}.ts-typebox{padding:18px 16px}.ts-sheet{padding:18px 18px 26px}.ts-capture{padding:18px 16px}.ts-eb-row{grid-template-columns:104px 1fr 28px}}
 @media (prefers-reduced-motion: reduce){.ts-caret{transition:none}.ts-caret.on,.ts-ptcaret::before{animation:none}.ts-prog i,.ts-acc-ring .fg{transition:none}.ts-result,.ts-stamp,.ts-confetti i{animation:none;display:none}}
@@ -1222,6 +1239,7 @@ class Stage {
     let entry, resultHtml;
 
     if (this.family === "hcm") {
+      this.lastTarget = this.baseText;
       const sc = scoreHcm(this.baseText, typed, elapsed);
       entry = {
         examId: this.examId, mode: this.mode, name: this.title, testId: this.testId,
@@ -1240,6 +1258,7 @@ class Stage {
       resultHtml = this.isExam ? this.examResultHcm(sc, entry) : this.practiceResult(sc, entry);
     } else {
       const tgt = this.family === "e2" ? cycleTarget(this.baseText, typed.length) : this.baseText;
+      this.lastTarget = tgt;
       const sc = scoreExam(this.spec, tgt, typed, elapsed, this.category);
       const catObj = this.spec && this.spec.categories
         ? this.spec.categories.find((c) => c.id === sc.category) : null;
@@ -1340,9 +1359,71 @@ class Stage {
 
   mistakeRowsHtml(rows) {
     if (!rows || !rows.length) return '<p style="margin:0;color:var(--ok,#3ddc97);font-size:13.5px;font-weight:600">✓ Spotless run — no mistakes.</p>';
-    return "<table><tr><th>Passage</th><th>You typed</th><th>Kind</th></tr>" + rows.map((r) =>
-      "<tr><td>" + esc(r.exp || "—") + '</td><td style="color:var(--error,#ff6b7a)">' + esc(r.got === "" ? "(skipped)" : r.got) + '</td><td><span class="ts-pill-tag">' +
-      esc(r.kind + (r.cat && r.cat !== r.kind ? " · " + r.cat : "")) + "</span></td></tr>").join("") + "</table>";
+    return "<table><tr><th>Passage</th><th>You typed</th><th>Kind</th></tr>" + rows.map((r) => {
+      const k = r.kind || r.st || "full";
+      return "<tr><td>" + esc(r.exp || "—") + '</td><td style="color:var(--error,#ff6b7a)">' + esc(r.got === "" ? "(skipped)" : r.got) + '</td><td><span class="ts-pill-tag">' +
+        esc(k + (r.cat && r.cat !== k ? " · " + r.cat : "")) + "</span></td></tr>";
+    }).join("") + "</table>";
+  }
+
+  compareHtml(sc) {
+    const tgt = this.lastTarget || this.baseText || "";
+    const typed = this.typed || "";
+    const origSpans = [];
+    const typedSpans = [];
+    if (sc && sc.score && sc.score.eStat && sc.score.gStat) {
+      const E = tgt.split(/\s+/).filter(Boolean);
+      const G = typed.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < E.length; i++) {
+        const s = sc.score.eStat[i];
+        const cls = !s ? "rest" : s.st === "ok" ? "ok" : s.st === "half" ? "half" : "miss";
+        origSpans.push('<span class="ts-cw ' + cls + '">' + esc(E[i]) + "</span>");
+      }
+      for (let j = 0; j < G.length; j++) {
+        const s = sc.score.gStat[j];
+        const cls = !s || s.st === "ok" ? "ok" : s.st === "half" ? "half" : "err";
+        typedSpans.push('<span class="ts-cw ' + cls + '">' + esc(G[j]) + "</span>");
+      }
+    } else {
+      const pairs = (sc && sc.pairs) || [];
+      const allOrig = tgt.trim().split(/\s+/).filter(Boolean);
+      let lastTi = -1;
+      for (let k = 0; k < pairs.length; k++) {
+        const p = pairs[k];
+        if (typeof p.ti === "number" && p.ti > lastTi) lastTi = p.ti;
+        if (p.kind === "ok") {
+          origSpans.push('<span class="ts-cw ok">' + esc(p.exp) + "</span>");
+          typedSpans.push('<span class="ts-cw ok">' + esc(p.got) + "</span>");
+        } else if (p.kind === "sub") {
+          origSpans.push('<span class="ts-cw miss">' + esc(p.exp) + "</span>");
+          typedSpans.push('<span class="ts-cw err">' + esc(p.got) + "</span>");
+        } else if (p.kind === "del") {
+          origSpans.push('<span class="ts-cw miss">' + esc(p.exp) + "</span>");
+        } else if (p.kind === "ins") {
+          typedSpans.push('<span class="ts-cw err">' + esc(p.got) + "</span>");
+        } else if (p.kind === "spacing") {
+          origSpans.push('<span class="ts-cw half">' + esc(p.exp) + "</span>");
+          typedSpans.push('<span class="ts-cw half">' + esc(p.got) + "</span>");
+        }
+      }
+      for (let i = lastTi + 1; i < allOrig.length; i++) {
+        origSpans.push('<span class="ts-cw rest">' + esc(allOrig[i]) + "</span>");
+      }
+    }
+    const origBody = origSpans.length ? origSpans.join(" ") : '<span class="ts-cw rest">(Empty)</span>';
+    const typedBody = typedSpans.length ? typedSpans.join(" ") : '<span class="ts-cw rest">(Nothing typed)</span>';
+    return '<div class="ts-card ts-compare-card">' +
+      '<div class="ts-cmp-head">' +
+        "<h3>Side-by-side Passage Comparison</h3>" +
+        '<span class="ts-cmp-legend">' +
+          '<span><i class="dot err"></i> Mistake</span>' +
+          '<span><i class="dot miss"></i> Missed / replaced</span>' +
+        "</span>" +
+      "</div>" +
+      '<div class="ts-compare-grid">' +
+        '<div class="ts-compare-pane"><div class="ts-cmp-lbl">Original passage</div><div class="ts-cmp-text">' + origBody + "</div></div>" +
+        '<div class="ts-compare-pane"><div class="ts-cmp-lbl">What you typed</div><div class="ts-cmp-text">' + typedBody + "</div></div>" +
+      "</div></div>";
   }
 
   examResultHcm(sc, e) {
@@ -1379,6 +1460,7 @@ class Stage {
     ];
     html += this.tilesHtml(hcmTiles);
     html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
+    html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
     if (weakK.length || weakW.length) {
       html += '<div class="ts-card"><h3>Weak Spots</h3>' +
@@ -1445,6 +1527,7 @@ class Stage {
             (c.pass ? "Qualified" : "Not qualified") + "</span></td></tr>").join("") + "</table>").join("") + "</div>";
     }
     const rows = (sc.mistakeDetail || []).map((d) => ({ exp: d.exp, got: d.got, kind: d.st, cat: "" }));
+    html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(rows) + "</div>";
     html += '<details class="ts-card ts-calc-details"><summary>Show exact score calculation</summary><ol>' +
       calc.map((c) => "<li>" + esc(c) + "</li>").join("") + "</ol></details>";
@@ -1486,6 +1569,7 @@ class Stage {
       [e.words + "", "Words typed"], [fmtTime(e.durSec), "Time"],
     ]);
     if (cats.length) html += '<div class="ts-card"><h3>Error Breakdown</h3>' + this.errBarsHtml(cats) + "</div>";
+    html += this.compareHtml(sc);
     html += '<div class="ts-card"><h3>Mistakes</h3>' + this.mistakeRowsHtml(sc.mistakeDetail) + "</div>";
     html += this.actionsHtml(e.errs);
     return html;
