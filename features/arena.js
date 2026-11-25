@@ -31,7 +31,13 @@ export function renderArena(view) {
   const hist = store.history();
   view.innerHTML = `
   <section class="page-head">
-    <h1>Exams</h1>
+    <div class="page-head-row">
+      <span class="page-head-icon" aria-hidden="true">${icon("target", 22)}</span>
+      <div class="page-head-copy">
+        <span class="page-kicker">Real Exam Rules</span>
+        <h1>Exams</h1>
+      </div>
+    </div>
     <p class="lede">Pick an exam for real-rule mocks, or paste your own text below.</p>
   </section>
 
@@ -199,9 +205,14 @@ export async function renderHub(view, examId) {
   view.innerHTML = `
   <section class="page-head">
     <div class="hub-head-top">
-      <div>
-        <p class="label" style="margin-bottom:6px">${esc(spec.body)}</p>
-        <h1>${esc(spec.name)}</h1>
+      <div class="page-head-copy">
+        <div class="page-head-row">
+          <span class="page-head-icon" aria-hidden="true">${icon("trophy", 22)}</span>
+          <div>
+            <span class="page-kicker">${esc(spec.body)}</span>
+            <h1>${esc(spec.name)}</h1>
+          </div>
+        </div>
         <p class="lede">${esc(spec.posts)}</p>
       </div>
       <div class="hub-ctas">

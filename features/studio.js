@@ -81,7 +81,13 @@ export async function renderStudio(view, opts = {}) {
 
   view.innerHTML = `
   <section class="page-head">
-    <h1>${initialSec === "vocab" ? "Vocabulary Drills" : "Drills & Warm-ups"}</h1>
+    <div class="page-head-row">
+      <span class="page-head-icon" aria-hidden="true">${icon(initialSec === "vocab" ? "book" : "keyboard", 22)}</span>
+      <div class="page-head-copy">
+        <span class="page-kicker">${initialSec === "vocab" ? "Exam Word Bank" : "Focused Practice"}</span>
+        <h1>${initialSec === "vocab" ? "Vocabulary Drills" : "Drills & Warm-ups"}</h1>
+      </div>
+    </div>
     <p class="lede">${initialSec === "vocab"
       ? "Most-common English words, government terms, and long-word chunks."
       : "Master weak words, warm-ups, finger patterns, and exam vocabulary."}</p>

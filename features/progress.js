@@ -104,7 +104,13 @@ export function renderProgress(view) {
   if (!hist.length) {
     view.innerHTML = `
     <section class="page-head">
-      <h1>Progress</h1>
+      <div class="page-head-row">
+        <span class="page-head-icon" aria-hidden="true">${icon("chart", 22)}</span>
+        <div class="page-head-copy">
+          <span class="page-kicker">Practice History</span>
+          <h1>Progress</h1>
+        </div>
+      </div>
       <p class="lede">Your speed, accuracy, and exam verdicts on this device.</p>
     </section>
     <div class="empty-note" style="margin-top:24px">
@@ -138,7 +144,13 @@ export function renderProgress(view) {
 
   view.innerHTML = `
   <section class="page-head">
-    <h1>Progress</h1>
+    <div class="page-head-row">
+      <span class="page-head-icon" aria-hidden="true">${icon("chart", 22)}</span>
+      <div class="page-head-copy">
+        <span class="page-kicker">Practice History</span>
+        <h1>Progress</h1>
+      </div>
+    </div>
     <p class="lede">Your speed trend, accuracy, and saved breakdowns.</p>
   </section>
 

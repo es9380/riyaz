@@ -597,18 +597,27 @@ function livingVisualHtml(idx) {
           ${keys.map((row, ri) => `<div class="lv-krow">
             ${row.map((k, ki) => `<span class="lv-key${k === "SPACE" ? " wide" : ""}" style="--kd:${((ri * 5 + ki * 2) % 9) * 0.28}s">${k}</span>`).join("")}
           </div>`).join("")}
+          <div class="lv-rhythm-bar"><i></i></div>
         </div>` : scene === 1 ? `
-        <svg class="lv-svg" viewBox="0 0 260 74" fill="none">
+        <svg class="lv-svg" viewBox="0 0 260 76" fill="none">
+          <defs>
+            <linearGradient id="lvAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.34"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
           <line x1="8" y1="30" x2="252" y2="30" stroke="var(--ok)" stroke-width="1" stroke-dasharray="4 4" opacity="0.65"/>
           <text x="250" y="25" text-anchor="end" fill="var(--ok)" font-size="9" font-weight="700">30+ WPM</text>
+          <path class="lv-area" d="M10 62 C55 58, 82 48, 122 39 C160 30, 196 20, 248 12 L248 70 L10 70 Z" fill="url(#lvAreaGrad)"/>
           <path class="lv-curve-bg" d="M10 62 C55 58, 82 48, 122 39 C160 30, 196 20, 248 12" stroke="var(--line-strong)" stroke-width="2" stroke-linecap="round"/>
           <path class="lv-curve" d="M10 62 C55 58, 82 48, 122 39 C160 30, 196 20, 248 12" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle class="lv-dot-halo" cx="248" cy="12" r="9"/>
           <circle class="lv-dot-end" cx="248" cy="12" r="4" fill="var(--ok)"/>
         </svg>` : `
         <div class="lv-lines">
-          <div class="lv-line"><i style="--lw:86%;--ld:0s"></i></div>
-          <div class="lv-line"><i style="--lw:72%;--ld:0.35s"></i></div>
-          <div class="lv-line"><i style="--lw:92%;--ld:0.7s"></i></div>
+          <div class="lv-line-row"><div class="lv-line"><i style="--lw:86%;--ld:0s"></i></div><span class="lv-line-tick" style="--ld:0s">✓</span></div>
+          <div class="lv-line-row"><div class="lv-line"><i style="--lw:72%;--ld:0.35s"></i></div><span class="lv-line-tick" style="--ld:0.35s">✓</span></div>
+          <div class="lv-line-row"><div class="lv-line"><i style="--lw:92%;--ld:0.7s"></i></div><span class="lv-line-tick" style="--ld:0.7s">✓</span></div>
         </div>`}
     </div>
   </div>`;
@@ -941,7 +950,7 @@ export function renderHome(view) {
             if (document.body.contains(tagEl)) tagEl.classList.remove("is-in");
           });
         });
-      }, 520);
+      }, 540);
     }, 12000);
   }
   if (!lvReduced && lvHost) {
