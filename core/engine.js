@@ -70,18 +70,21 @@ const ENGINE_CSS = `
 .ts-typebox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,var(--line-strong,var(--line,#2A2C33)))}
 .ts-typetext{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1}
 .ts-typetext .ch{border-radius:3px}
+.ts-typetext.no-err .ch{color:var(--ink-2,#9A978C)}
 .ts-typetext .ch.ok{color:var(--ok,#4ADE80)}
 .ts-typetext .ch.bad{color:var(--error,#F87171);background:color-mix(in srgb,var(--error,#F87171) 13%,transparent)}
+.ts-typetext .ch.typed,.ts-typetext.no-err .ch.typed{color:var(--ink,#E8E6DF);font-weight:700;background:color-mix(in srgb,var(--accent,#F59E0B) 14%,transparent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent,#F59E0B) 55%,transparent);text-decoration-thickness:1.5px;text-underline-offset:4px}
 .ts-caret{position:absolute;width:2px;background:var(--accent,#F59E0B);border-radius:1px;z-index:2;pointer-events:none;opacity:0;transition:left 55ms ease-out,top 55ms ease-out}
 .ts-caret.on{opacity:1;animation:tsblink 1.1s ease-in-out infinite}
 @keyframes tsblink{0%,38%{opacity:1}72%{opacity:.12}100%{opacity:1}}
 .ts-capture{position:absolute;inset:0;width:100%;height:100%;opacity:0;resize:none;border:0;outline:none!important;box-shadow:none!important;padding:22px 24px;font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;overflow:hidden;background:transparent;color:transparent;caret-color:transparent;z-index:3}
 .ts-paper-head{display:flex;align-items:center;gap:10px;margin-top:16px}
 .ts-paper-head .cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#9A978C)}
-.ts-sheet{margin-top:8px;background:var(--sheet-bg,#FFFCF4);color:var(--sheet-ink,#191B1F);border:1px solid var(--line,#2A2C33);border-radius:8px;padding:24px 28px 30px;max-height:238px;overflow-y:auto;overscroll-behavior:contain;font-family:var(--font-sheet,"Newsreader",Georgia,serif);font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;box-shadow:0 2px 12px rgba(0,0,0,.14)}
-.ts-paperbox{position:relative;margin-top:12px;border:1px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);padding:20px 24px;height:240px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
-.ts-paperbox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,var(--line-strong,var(--line,#2A2C33)))}
-.ts-paper-typed{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1;min-height:calc(var(--ts-fs)*var(--ts-lh))}
+.ts-sheet{margin-top:8px;background:var(--sheet-bg,#FFFCF4);color:var(--sheet-ink,#191B1F);border:1px solid var(--sheet-line,var(--line,#2A2C33));border-radius:8px;padding:24px 28px 30px;max-height:238px;overflow-y:auto;overscroll-behavior:contain;font-family:var(--font-sheet,"Newsreader",Georgia,serif);font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;box-shadow:0 2px 12px rgba(0,0,0,.14)}
+.ts-paperbox{position:relative;margin-top:12px;border:1.5px solid var(--line-strong,var(--line,#2A2C33));border-radius:16px;background:var(--surface,#15171C);box-shadow:inset 3px 0 0 var(--accent,#F59E0B);padding:20px 24px;height:240px;overflow-y:auto;overflow-anchor:none;overscroll-behavior:contain;cursor:text}
+.ts-paperbox.focused{border-color:color-mix(in srgb,var(--accent,#F59E0B) 58%,var(--line-strong,var(--line,#2A2C33)))}
+.ts-paper-typed{font-size:var(--ts-fs);line-height:var(--ts-lh);white-space:pre-wrap;word-break:break-word;position:relative;z-index:1;min-height:calc(var(--ts-fs)*var(--ts-lh));color:var(--ink,#E8E6DF)}
+.ts-paper-typed.has-typed{font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent,#F59E0B) 48%,transparent);text-decoration-thickness:2px;text-underline-offset:5px}
 .ts-paper-typed .ph{color:var(--muted,#9A978C)}
 .ts-ptcaret{display:inline;position:relative}
 .ts-ptcaret::after{content:"\\200B"}
@@ -948,13 +951,13 @@ class Stage {
     if (tgt !== this.builtTarget) this.buildSpans(tgt);
     const typed = this.typed;
     const showErr = this.liveErrors;
+    this.typeText.classList.toggle("no-err", !showErr);
     const flags = (typed.length && !this.finished) ? this.charFlags() : null;
     const kids = this.typeText.children;
     for (let i = 0; i < kids.length; i++) {
       let cls = "ch";
-      if (flags && flags[i] === true) cls += " ok";
-      else if (flags && flags[i] === false && showErr) cls += " bad";
-      else if (flags && flags[i] === false) cls += " ok";
+      if (flags && flags[i] === true) cls += showErr ? " ok" : " typed";
+      else if (flags && flags[i] === false) cls += showErr ? " bad" : " typed";
       if (this.spanCls[i] !== cls) { kids[i].className = cls; this.spanCls[i] = cls; }
     }
     this.positionCaret();
@@ -1012,11 +1015,13 @@ class Stage {
     pt.innerHTML = "";
     this.paperTextNode = null;
     if (!typed.length) {
+      pt.classList.remove("has-typed");
       pt.appendChild(h("span", "ts-ptcaret"));
       const ph = h("span", "ph", "Start typing — what you type appears here, under the sheet.");
       pt.appendChild(ph);
       return;
     }
+    pt.classList.add("has-typed");
     const before = document.createTextNode(typed.slice(0, this.caret));
     const caretSpan = h("span", "ts-ptcaret");
     const after = document.createTextNode(typed.slice(this.caret));
