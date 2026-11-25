@@ -652,6 +652,7 @@ const HOME_TAGLINES = [
 ];
 let lastTagIdx = -1;
 let heroTagTimer = null;
+let heroTagSwapTimer = null;
 
 /* ——— Page ——— */
 
@@ -917,6 +918,7 @@ export function renderHome(view) {
   const lvReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const tagEl = view.querySelector("#heroTagline");
   if (heroTagTimer) { clearInterval(heroTagTimer); heroTagTimer = null; }
+  if (heroTagSwapTimer) { clearTimeout(heroTagSwapTimer); heroTagSwapTimer = null; }
   if (!lvReduced && tagEl) {
     heroTagTimer = setInterval(() => {
       if (!document.body.contains(tagEl)) { clearInterval(heroTagTimer); heroTagTimer = null; return; }
@@ -927,15 +929,20 @@ export function renderHome(view) {
       curTagIdx = nextIdx;
       lastTagIdx = nextIdx;
       tagEl.classList.add("is-out");
-      setTimeout(() => {
+      if (heroTagSwapTimer) clearTimeout(heroTagSwapTimer);
+      heroTagSwapTimer = setTimeout(() => {
+        heroTagSwapTimer = null;
         if (!document.body.contains(tagEl)) return;
-        tagEl.textContent = HOME_TAGLINES[nextIdx];
         tagEl.classList.remove("is-out");
         tagEl.classList.add("is-in");
-        void tagEl.offsetWidth;
-        tagEl.classList.remove("is-in");
-      }, 280);
-    }, 4200);
+        tagEl.textContent = HOME_TAGLINES[nextIdx];
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (document.body.contains(tagEl)) tagEl.classList.remove("is-in");
+          });
+        });
+      }, 520);
+    }, 12000);
   }
   if (!lvReduced && lvHost) {
     const lvTimer = setInterval(() => {
