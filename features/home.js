@@ -9,6 +9,7 @@ import * as store from "../core/store.js";
 import * as stats from "../core/stats.js";
 import * as sound from "../core/sound.js";
 import { esc, icon } from "../core/util.js";
+import { mountHomeAnimations } from "./home-anim.js";
 
 const CIRC = 2 * Math.PI * 26;
 
@@ -694,6 +695,8 @@ export function renderHome(view) {
 
   view.innerHTML = `
   <section class="hero">
+    <canvas class="hero-fx hero-aurora" aria-hidden="true"></canvas>
+    <canvas class="hero-fx hero-globe" aria-hidden="true"></canvas>
     <div class="hero-top">
       <div class="hero-copy">
         <div class="hero-kicker-row">
@@ -850,9 +853,34 @@ export function renderHome(view) {
         </a>`;
       }).join("")}
     </div>
+  </section>
+
+  <section class="section faq-section" aria-labelledby="faqH">
+    <div class="section-head">
+      <h2 id="faqH">Questions, answered</h2>
+    </div>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q" type="button" aria-expanded="false">Is Riyaz really free?<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+        <div class="faq-a"><p>Yes. Core practice is completely free — full-length mocks, drills and vocabulary for every exam. Start right now as a guest: no sign-up, no payment.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button" aria-expanded="false">How is my score calculated?<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+        <div class="faq-a"><p>By each exam's official rules — the same formulas, mistake counts and exemptions the real test applies. Marks and qualification are stamped only when the full passage is typed or the full time runs out, exactly like the real exam.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button" aria-expanded="false">Which exams are covered?<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+        <div class="faq-a"><p>Delhi Police HCM typing is the flagship. Riyaz also covers SSC CHSL, SSC CGL DEST and RRB NTPC typing tests, plus SSC CPO Paper-II vocabulary mocks — each hub follows its own official pattern, timing and marking.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button" aria-expanded="false">Do I need an account?<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+        <div class="faq-a"><p>No. Everything works as a guest, and your results, best scores and streaks save on this device. Accounts and cloud sync are coming soon.</p></div>
+      </div>
+    </div>
   </section>`;
 
   mountDemo(view);
+  mountHomeAnimations(view);
 
   /* Typing-time bars: peek at a day, revert to today after 4.5s. */
   const barsWrap = view.querySelector("#ttBars");
