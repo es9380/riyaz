@@ -83,6 +83,15 @@ function matchesFilter(e, filter) {
   return (e.examId || "hcm") === filter && e.mode !== "drill" && e.mode !== "warmup" && e.mode !== "revision";
 }
 
+/* Verdict wording for one history entry — same rules as verdictBadge,
+   as plain text for the trend readout and the accessible data table. */
+function trendVerdict(e) {
+  if (e.incomplete) return "Incomplete";
+  if ((e.mode === "mock" || e.mode === "custom") && e.qualified != null)
+    return e.qualified ? "Qualified" : "Below bar";
+  return "";
+}
+
 function renderTrendSvg(rows, targetWPM) {
   const pts = rows.slice(0, 20).reverse(); /* oldest -> newest */
   if (pts.length < 2) return "";
@@ -102,7 +111,8 @@ function renderTrendSvg(rows, targetWPM) {
       <span class="label">Net WPM trend · last ${pts.length}</span>
       <span class="trend-legend num">Latest ${nets[nets.length - 1]} WPM · Peak ${Math.max(...nets)} WPM</span>
     </div>
-    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart of net WPM across your last ${pts.length} attempts">
+    <div class="trend-plot">
+    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" role="img" tabindex="0" aria-label="Line chart of net WPM across your last ${pts.length} attempts. Focus the chart and use the left and right arrow keys to inspect each attempt.">
       <defs>
         <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
@@ -119,15 +129,158 @@ function renderTrendSvg(rows, targetWPM) {
       ` : ""}
       <path d="${areaPath}" fill="url(#trendGrad)" />
       <path d="${linePath}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-      ${pts.map((p, i) => `
-        <circle cx="${xAt(i).toFixed(1)}" cy="${yAt(nets[i]).toFixed(1)}" r="3.6" fill="var(--bg-raise)" stroke="${p.qualified ? "var(--ok)" : "var(--accent)"}" stroke-width="2">
-          <title>${esc(p.name || "Test")}: ${nets[i]} WPM (${Number(p.acc || 0).toFixed(1)}% acc)</title>
-        </circle>
-      `).join("")}
+      <g class="trend-cross" aria-hidden="true">
+        <line class="trend-cross-line" y1="${padT}" y2="${padT + innerH}" stroke="var(--line-strong)" stroke-width="1" />
+        <circle class="trend-cross-dot" r="7.5" fill="none" stroke="var(--accent)" stroke-width="2" />
+      </g>
+      ${pts.map((p, i) => {
+        const nm = p.name || "Test";
+        const dt = p.dateStr || fmtDate(p.ts);
+        const ac = Number(p.acc || 0).toFixed(1);
+        return `
+        <circle class="trend-pt" data-i="${i}" data-x="${xAt(i).toFixed(1)}" data-y="${yAt(nets[i]).toFixed(1)}" data-net="${nets[i]}" data-acc="${ac}" data-name="${esc(nm)}" data-date="${esc(dt)}" data-verdict="${esc(trendVerdict(p))}" cx="${xAt(i).toFixed(1)}" cy="${yAt(nets[i]).toFixed(1)}" r="3.6" fill="var(--bg-raise)" stroke="${p.qualified ? "var(--ok)" : "var(--accent)"}" stroke-width="2">
+          <title>${esc(nm)}: ${nets[i]} WPM (${ac}% acc)</title>
+        </circle>`;
+      }).join("")}
       <text x="${padL}" y="${H - 5}" fill="var(--ink-3)" font-size="10">Oldest</text>
       <text x="${W - padR}" y="${H - 5}" text-anchor="end" fill="var(--ink-3)" font-size="10">Newest</text>
     </svg>
+    <div class="trend-readout num" role="status" hidden></div>
+    <div class="trend-data">
+    <table>
+      <caption>Net WPM across your last ${pts.length} attempts, oldest to newest</caption>
+      <thead><tr><th scope="col">Attempt</th><th scope="col">Date</th><th scope="col">Net WPM</th><th scope="col">Accuracy</th><th scope="col">Verdict</th></tr></thead>
+      <tbody>
+        ${pts.map((p, i) => `<tr><td>${esc(p.name || "Test")}</td><td>${esc(p.dateStr || fmtDate(p.ts))}</td><td>${nets[i]}</td><td>${Number(p.acc || 0).toFixed(1)}%</td><td>${esc(trendVerdict(p))}</td></tr>`).join("")}
+      </tbody>
+    </table>
+    </div>
+    </div>
   </div>`;
+}
+
+/* ——— Trend chart inspection (ported interaction model) ———
+   Hover / touch / keyboard point inspection for the trend chart:
+   a crosshair + readout follows the inspected attempt, in the
+   pattern of the 21st Line Chart (hover and keyboard inspection
+   with an accessible data table — the table is in the markup
+   above). Presentation only: the plotted points, values, target
+   line and colours come from renderTrendSvg, unchanged. All
+   readout text is set via textContent (history names can arrive
+   from imported backups, so they are never injected as HTML). */
+function wireTrendChart(host) {
+  const svg = host.querySelector(".trend-svg");
+  const readout = host.querySelector(".trend-readout");
+  const cross = host.querySelector(".trend-cross");
+  if (!svg || !readout || !cross) return;
+  const pts = Array.from(svg.querySelectorAll(".trend-pt"));
+  if (pts.length < 2) return;
+  const crossLine = cross.querySelector(".trend-cross-line");
+  const crossDot = cross.querySelector(".trend-cross-dot");
+  const vb = svg.viewBox && svg.viewBox.baseVal;
+  const W = (vb && vb.width) || 680;
+  const H = (vb && vb.height) || 132;
+  let active = -1;
+
+  function show(i) {
+    i = Math.max(0, Math.min(pts.length - 1, i));
+    active = i;
+    const pt = pts[i];
+    const x = parseFloat(pt.dataset.x);
+    const y = parseFloat(pt.dataset.y);
+    pts.forEach((c, j) => {
+      c.setAttribute("r", j === i ? "5.2" : "3.6");
+      c.classList.toggle("is-active", j === i);
+    });
+    crossLine.setAttribute("x1", x.toFixed(1));
+    crossLine.setAttribute("x2", x.toFixed(1));
+    crossDot.setAttribute("cx", x.toFixed(1));
+    crossDot.setAttribute("cy", y.toFixed(1));
+    crossDot.setAttribute("stroke", pt.getAttribute("stroke") || "var(--accent)");
+    cross.classList.add("on");
+
+    const main = document.createElement("span");
+    main.className = "trend-readout-main";
+    main.textContent = `${pt.dataset.net} net WPM`;
+    const verdict = pt.dataset.verdict || "";
+    if (verdict) {
+      const v = document.createElement("span");
+      v.className = "trend-verdict" + (verdict === "Qualified" ? " pass" : verdict === "Below bar" ? " fail" : "");
+      v.textContent = verdict;
+      main.append(" ", v);
+    }
+    const sub = document.createElement("span");
+    sub.className = "trend-readout-sub";
+    sub.textContent = `${pt.dataset.name} · ${pt.dataset.date} · ${pt.dataset.acc}% acc`;
+    readout.replaceChildren(main, sub);
+    readout.style.left = `${(x / W) * 100}%`;
+    readout.style.top = `${(y / H) * 100}%`;
+    readout.classList.toggle("align-start", x / W < 0.22);
+    readout.classList.toggle("align-end", x / W > 0.78);
+    readout.classList.toggle("below", y / H < 0.38);
+    readout.hidden = false;
+  }
+
+  function hide() {
+    active = -1;
+    cross.classList.remove("on");
+    readout.hidden = true;
+    pts.forEach((c) => {
+      c.setAttribute("r", "3.6");
+      c.classList.remove("is-active");
+    });
+  }
+
+  function nearest(clientX) {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return -1;
+    const vx = ((clientX - rect.left) / rect.width) * W;
+    let best = 0;
+    let bd = Infinity;
+    pts.forEach((c, j) => {
+      const d = Math.abs(parseFloat(c.dataset.x) - vx);
+      if (d < bd) { bd = d; best = j; }
+    });
+    return best;
+  }
+
+  svg.addEventListener("pointermove", (e) => {
+    const i = nearest(e.clientX);
+    if (i >= 0 && i !== active) show(i);
+  });
+  svg.addEventListener("pointerdown", (e) => {
+    const i = nearest(e.clientX);
+    if (i < 0) return;
+    show(i);
+    /* Take focus now, during the press. A touch tap otherwise
+       fires a synthetic pointerleave on release BEFORE the tap's
+       own focus lands: the leave handler hides this readout (its
+       guard still sees the old activeElement), and the focus
+       handler then reopens inspection on the newest point instead
+       of the tapped one. With focus already on the chart, the
+       leave guard keeps the tapped point showing — the same
+       behaviour a mouse click already had. */
+    try { svg.focus({ preventScroll: true }); } catch (err) { svg.focus(); }
+  });
+  svg.addEventListener("pointerleave", () => {
+    if (document.activeElement !== svg) hide();
+  });
+  svg.addEventListener("focus", () => {
+    if (active < 0) show(pts.length - 1);
+  });
+  svg.addEventListener("blur", hide);
+  svg.addEventListener("keydown", (e) => {
+    const last = pts.length - 1;
+    let i = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") i = active < 0 ? last : Math.min(last, active + 1);
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") i = active < 0 ? last : Math.max(0, active - 1);
+    else if (e.key === "Home") i = 0;
+    else if (e.key === "End") i = last;
+    else if (e.key === "Escape") { hide(); return; }
+    if (i === null) return;
+    e.preventDefault();
+    show(i);
+  });
 }
 
 export function renderProgress(view) {
@@ -324,6 +477,7 @@ export function renderProgress(view) {
 
     const spec = (filter === "hcm" || filter === "chsl" || filter === "rrb") ? specOf(filter) : null;
     trendHost.innerHTML = renderTrendSvg(rows, spec ? spec.targetWPM : 0) + calendarHeatmapHtml(rows);
+    wireTrendChart(trendHost);
 
     if (!rows.length) {
       detailHost.innerHTML = "";
