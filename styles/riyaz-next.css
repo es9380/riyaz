@@ -114,6 +114,114 @@ body {
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 }
 
+/* ——— v3.18 home animation layer (features/home-anim.js) ———
+   Aurora + particle globe behind the hero, word-rise headline,
+   spotlight exam rows, shiny heading accent, FAQ accordion.
+   Presentation only; driven entirely by home-anim.js. */
+
+/* The hero's ambient glow (::before in pages.css) bleeds 10% past the
+   hero on both sides by design; on narrow screens that bleed becomes
+   scrollable overflow (390px viewport reported scrollWidth 412).
+   Clip horizontal overflow at the root so the glow still paints to
+   the edge but the page can never scroll sideways. `clip` (unlike
+   `hidden`) creates no scroll container, so sticky chrome is safe. */
+html, body { overflow-x: clip; }
+
+/* Hero canvases: behind the hero content, never interactive */
+.hero > canvas.hero-fx { position: absolute; z-index: 0; pointer-events: none; display: block; }
+.hero-aurora {
+  inset: 0; width: 100%; height: 100%;
+  background:
+    radial-gradient(60% 45% at 50% 0%, rgba(217, 119, 6, 0.35), transparent 70%),
+    radial-gradient(40% 30% at 80% 10%, rgba(255, 107, 122, 0.14), transparent 70%);
+}
+:root[data-theme="light"] .hero-aurora {
+  opacity: 0.55;
+  background:
+    radial-gradient(60% 45% at 50% 0%, rgba(217, 119, 6, 0.22), transparent 70%),
+    radial-gradient(40% 30% at 80% 10%, rgba(255, 107, 122, 0.08), transparent 70%);
+}
+.hero-globe { inset: auto 0 0 0; width: 100%; height: min(560px, 78%); }
+:root[data-theme="light"] .hero-globe { opacity: 0.6; }
+
+/* Headline word rise (SplitText-style masks).
+   The h1's own gradient (riyaz-next.css above) is background-clip:text
+   on the parent — Chromium double-paints the text of TRANSFORMED
+   descendants through such a clip (ghost copies at rest positions),
+   so once the headline is split, the gradient moves onto each word
+   span itself, where clip + transform compose correctly. */
+.hero h1.words-live { background: none; }
+.hero h1.words-live .wi {
+  background: linear-gradient(120deg, var(--ink) 30%, var(--accent-strong) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero h1 .w {
+  display: inline-block; overflow: hidden; vertical-align: bottom;
+  padding-bottom: 0.12em; margin-bottom: -0.12em;
+}
+.hero h1 .wi {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: hero-word-up 0.7s cubic-bezier(0.16, 0.8, 0.24, 1) forwards;
+  animation-delay: calc(0.05s + var(--i) * 0.055s);
+}
+@keyframes hero-word-up { to { transform: translateY(0); } }
+
+/* Spotlight hover on exam rows — layered over the existing lift */
+.exam-row { overflow: hidden; }
+.exam-row::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%);
+  opacity: 0; transition: opacity 0.35s ease;
+}
+.exam-row:hover::after { opacity: 1; }
+.exam-row::before { z-index: 1; }
+.exam-row > span { position: relative; z-index: 1; }
+
+/* ShinyText on the exams heading accent word */
+.shiny-text {
+  background: linear-gradient(110deg, var(--accent) 42%, #fff3d6 50%, var(--accent) 58%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shiny-move 3.6s linear infinite;
+}
+:root[data-theme="light"] .shiny-text {
+  background-image: linear-gradient(110deg, #b45309 42%, #f59e0b 50%, #b45309 58%);
+}
+@keyframes shiny-move { from { background-position: 180% 0; } to { background-position: -40% 0; } }
+
+/* FAQ accordion */
+.faq { max-width: 760px; margin-top: 14px; }
+.faq-item {
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  margin-bottom: 12px; overflow: hidden;
+}
+.faq-q {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  text-align: left; background: none; border: 0; color: var(--ink);
+  font: inherit; font-size: 1.02rem; font-weight: 700; padding: 18px 20px; cursor: pointer;
+}
+.faq-q .chev {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid var(--line); display: grid; place-items: center;
+  color: var(--accent); transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.faq-q .chev svg { width: 14px; height: 14px; }
+.faq-item.open .chev { transform: rotate(180deg); }
+.faq-a { height: 0; overflow: hidden; transition: height 0.5s cubic-bezier(0.23, 1, 0.32, 1); }
+.faq-a p { padding: 0 20px 18px; color: var(--ink-2); font-size: 0.95rem; line-height: 1.65; }
+.faq-q:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero h1 .wi { animation: none; transform: none; }
+  .shiny-text { animation: none; }
+  .faq-a, .faq-q .chev { transition: none; }
+  .exam-row::after { transition: none; }
+}
+
 /* Footer */
 .site-footer { border-top: 1px solid var(--line); margin-top: 90px; }
 .footer-in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: var(--ink-3); font-size: var(--fs-small); }
